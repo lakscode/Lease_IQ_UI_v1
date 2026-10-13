@@ -1,0 +1,85 @@
+/* Intelligence area: Lease Assistant, opportunities, supporting documents, financial tools. Prefix: .intel- */
+
+.intel-chip {
+  display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
+  font-size: 0.78rem; text-decoration: none; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.intel-chip:hover { border-color: var(--primary); color: var(--primary); }
+.intel-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.intel-section-title { font-size: 0.95rem; font-weight: 650; margin: 0; }
+.intel-muted-row { display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.82rem; color: var(--muted); }
+.intel-stack { display: flex; flex-direction: column; gap: 16px; }
+.intel-inline-input { width: 120px; padding: 4px 8px; text-align: right; }
+.intel-pos { color: var(--success); }
+.intel-neg { color: var(--danger); }
+.intel-checks { display: flex; flex-wrap: wrap; gap: 16px; }
+.intel-details summary { cursor: pointer; color: var(--primary); font-size: 0.88rem; }
+.intel-formula { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.8rem; white-space: pre-wrap; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin: 8px 0 0; }
+
+/* ---- Lease Assistant ---- */
+.intel-assistant { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 16px; min-height: calc(100vh - 170px); }
+.intel-convs { display: flex; flex-direction: column; min-height: 0; }
+.intel-conv-list { list-style: none; margin: 0; padding: 6px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; max-height: calc(100vh - 260px); }
+.intel-conv-item { display: flex; align-items: center; gap: 4px; border-radius: 8px; }
+.intel-conv-item:hover { background: var(--surface-2); }
+.intel-conv-item.active { background: var(--primary-soft); }
+.intel-conv-link { flex: 1; min-width: 0; padding: 8px 10px; text-decoration: none; color: var(--text); display: flex; flex-direction: column; gap: 2px; }
+.intel-conv-title { font-size: 0.9rem; font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.intel-conv-sub { font-size: 0.75rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.intel-conv-actions { display: flex; opacity: 0; transition: opacity 0.1s; }
+.intel-conv-item:hover .intel-conv-actions, .intel-conv-item.active .intel-conv-actions, .intel-conv-actions:focus-within { opacity: 1; }
+
+.intel-chat { display: flex; flex-direction: column; min-height: 0; }
+.intel-chat-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.intel-chat-header h2 { font-size: 1rem; margin: 0; }
+.intel-thread { flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 14px; min-height: 260px; max-height: calc(100vh - 360px); }
+.intel-msg { display: flex; flex-direction: column; gap: 6px; max-width: 86%; }
+.intel-msg-user { align-self: flex-end; align-items: flex-end; }
+.intel-msg-assistant { align-self: flex-start; }
+.intel-bubble { padding: 10px 14px; border-radius: 12px; font-size: 0.92rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+.intel-msg-user .intel-bubble { background: var(--primary); color: #fff; border-bottom-right-radius: 4px; }
+.intel-msg-assistant .intel-bubble { background: var(--surface-2); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+.intel-cite { display: inline-block; font-size: 0.7rem; font-weight: 650; vertical-align: super; line-height: 1; margin: 0 1px; padding: 1px 4px; border-radius: 4px; background: var(--primary-soft); color: var(--primary); text-decoration: none; }
+.intel-cite:hover { background: var(--primary); color: #fff; }
+.intel-sources { display: flex; flex-direction: column; gap: 4px; }
+.intel-source-label { font-size: 0.75rem; color: var(--muted); }
+.intel-usage { font-size: 0.72rem; color: var(--muted); }
+.intel-composer { border-top: 1px solid var(--border); padding: 12px 18px; display: flex; flex-direction: column; gap: 10px; }
+.intel-composer-row { display: flex; gap: 10px; align-items: flex-end; }
+.intel-composer textarea { flex: 1; resize: vertical; min-height: 44px; max-height: 200px; }
+.intel-scope { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.intel-suggestions { display: flex; flex-wrap: wrap; gap: 8px; }
+.intel-suggestion { border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 0.84rem; cursor: pointer; text-align: left; }
+.intel-suggestion:hover { border-color: var(--primary); color: var(--primary); }
+.intel-welcome { padding: 28px 18px; display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
+
+/* ---- Opportunities ---- */
+.intel-opps { display: flex; flex-direction: column; gap: 10px; }
+.intel-opp { border: 1px solid var(--border); border-left: 4px solid var(--border-strong); border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; background: var(--surface); }
+.intel-opp.status-action { border-left-color: var(--danger); }
+.intel-opp.status-watch { border-left-color: var(--warning); }
+.intel-opp.status-needs_data { border-left-color: var(--info); }
+.intel-opp-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.intel-opp-title { font-weight: 600; font-size: 0.92rem; }
+.intel-opp-summary { font-size: 0.88rem; margin: 0; }
+
+/* ---- Attachments ---- */
+.intel-review { border-top: 1px dashed var(--border); margin-top: 8px; padding-top: 8px; display: flex; flex-direction: column; gap: 8px; font-size: 0.88rem; }
+.intel-review ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.intel-att { display: flex; flex-direction: column; gap: 4px; }
+.intel-att-head { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: flex-start; }
+.intel-att-name { font-weight: 600; word-break: break-word; }
+
+/* ---- Schedule editor ---- */
+.intel-sched-table td { padding: 6px 8px; }
+.intel-sched-table .input { padding: 5px 8px; font-size: 0.85rem; }
+
+@media (max-width: 900px) {
+  .intel-assistant { grid-template-columns: 1fr; }
+  .intel-conv-list { max-height: 220px; }
+  .intel-thread { max-height: none; }
+  .intel-scope { grid-template-columns: 1fr; }
+  .intel-msg { max-width: 100%; }
+}
+.intel-warn { color: var(--warning); }

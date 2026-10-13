@@ -148,9 +148,9 @@ export function Field({ label, hint, error, children, full }: { label: ReactNode
   );
 }
 
-export const Input = (props: InputHTMLAttributes<HTMLInputElement>) => <input className={cx('input', props.className)} {...props} />;
-export const Select = (props: SelectHTMLAttributes<HTMLSelectElement>) => <select className={cx('input', props.className)} {...props} />;
-export const Textarea = (props: TextareaHTMLAttributes<HTMLTextAreaElement>) => <textarea className={cx('input', props.className)} {...props} />;
+export const Input = (props: InputHTMLAttributes<HTMLInputElement>) => <input {...props} className={cx('input', props.className)} />;
+export const Select = (props: SelectHTMLAttributes<HTMLSelectElement>) => <select {...props} className={cx('input', props.className)} />;
+export const Textarea = (props: TextareaHTMLAttributes<HTMLTextAreaElement>) => <textarea {...props} className={cx('input', props.className)} />;
 
 // ---- Tabs ------------------------------------------------------------------------------------
 

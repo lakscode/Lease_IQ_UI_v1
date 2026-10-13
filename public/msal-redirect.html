@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Signing in…</title>
+    <style>
+      body { font-family: system-ui, sans-serif; display: grid; place-items: center; min-height: 100vh; margin: 0; color: #64748b; }
+    </style>
+  </head>
+  <body>
+    <p>Completing Microsoft sign-in…</p>
+    <!--
+      MSAL Browser v5 redirect bridge for popup sign-in (OneDrive / SharePoint pickers).
+      Register https://<your-app>/msal-redirect.html as a SPA redirect URI in Azure (see docs/CLOUD_SETUP.md).
+      The version must match UI/package.json (@azure/msal-browser).
+    -->
+    <script type="module">
+      import { broadcastResponseToMainFrame } from 'https://cdn.jsdelivr.net/npm/@azure/msal-browser@5.20.0/dist/redirect_bridge/index.mjs/+esm';
+      broadcastResponseToMainFrame().catch((err) => {
+        document.querySelector('p').textContent = 'Sign-in could not be completed: ' + (err && err.message ? err.message : err);
+      });
+    </script>
+  </body>
+</html>

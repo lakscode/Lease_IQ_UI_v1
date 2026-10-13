@@ -1,20 +1,24 @@
 import { useState } from 'react';
-import { Link, Navigate, useLocation, useNavigate } from 'react-router';
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router';
 import { supabase } from '../../lib/supabase.ts';
 import { config } from '../../lib/config.ts';
 import { useAuth } from '../../auth/AuthProvider.tsx';
 import { Alert, Button, Field, Input } from '../../components/ui.tsx';
 import { useT } from '../../i18n/index.tsx';
 import { AuthShell } from './AuthShell.tsx';
+import { safeNext } from './types.ts';
 
 export default function LoginPage() {
   const { session } = useAuth();
   const t = useT();
   const navigate = useNavigate();
   const location = useLocation();
-  const redirectTo = (location.state as { from?: string } | null)?.from || '/dashboard';
+  const [params] = useSearchParams();
+  // Destination after sign-in: router state (from RequireAuth) or ?next= (from the invite page / emails).
+  const redirectTo = safeNext((location.state as { from?: string } | null)?.from) || safeNext(params.get('next')) || '/dashboard';
+  const nextQuery = redirectTo !== '/dashboard' ? `?next=${encodeURIComponent(redirectTo)}` : '';
 
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(params.get('email') ?? '');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -27,7 +31,7 @@ export default function LoginPage() {
     setError('');
     const { error: err } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setBusy(false);
-    if (err) setError(err.message);
+    if (err) setError(/invalid login/i.test(err.message) ? t('auth.invalidCredentials') : /not confirmed/i.test(err.message) ? t('auth.emailNotConfirmed') : err.message);
     else navigate(redirectTo, { replace: true });
   };
 
@@ -46,13 +50,13 @@ export default function LoginPage() {
     <AuthShell title={t('auth.signIn')} subtitle={t('auth.signInSubtitle')}>
       <form onSubmit={submit} className="form" noValidate>
         <Field label={t('auth.email')}>
-          <Input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
+          <Input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus={!email} />
         </Field>
         <Field label={t('auth.password')}>
-          <Input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <Input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required autoFocus={Boolean(email)} />
         </Field>
         <div className="row-between">
-          <Link to="/forgot-password" className="small">{t('auth.forgotPassword')}</Link>
+          <Link to={`/forgot-password${email ? `?email=${encodeURIComponent(email.trim())}` : ''}`} className="small">{t('auth.forgotPassword')}</Link>
         </div>
         {error && <Alert tone="danger">{error}</Alert>}
         <Button type="submit" variant="primary" className="btn-block" loading={busy} disabled={!email || !password}>
@@ -75,7 +79,7 @@ export default function LoginPage() {
       )}
 
       <p className="auth-footer muted">
-        {t('auth.noAccount')} <Link to="/signup">{t('auth.signUp')}</Link>
+        {t('auth.noAccount')} <Link to={`/signup${nextQuery}${email ? `${nextQuery ? '&' : '?'}email=${encodeURIComponent(email.trim())}` : ''}`}>{t('auth.signUp')}</Link>
       </p>
     </AuthShell>
   );

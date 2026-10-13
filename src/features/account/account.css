@@ -1,0 +1,64 @@
+/* Account & administration area (.acct-) */
+
+.acct-toolbar { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+.acct-toolbar .field { min-width: 150px; }
+.acct-toolbar-spacer { flex: 1; }
+.acct-bulkbar {
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 8px 12px;
+  background: var(--primary-soft); border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent); border-radius: 8px; font-size: 0.88rem;
+}
+.acct-check { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
+.acct-col-check { width: 36px; }
+.acct-role-select { min-width: 110px; }
+.acct-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.acct-link-box { display: flex; gap: 8px; align-items: center; }
+.acct-link-box .input { font-family: ui-monospace, Consolas, monospace; font-size: 0.8rem; }
+.acct-section-gap { display: flex; flex-direction: column; gap: 18px; }
+.acct-actions { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
+.acct-muted-cell { color: var(--muted); font-size: 0.85rem; }
+
+/* Organization logo */
+.acct-logo-row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.acct-logo-preview {
+  width: 160px; height: 64px; border: 1px dashed var(--border-strong); border-radius: 8px; display: grid; place-items: center;
+  background: var(--surface-2); overflow: hidden; color: var(--muted); font-size: 0.8rem;
+}
+.acct-logo-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+/* Profile */
+.acct-profile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
+@media (max-width: 900px) { .acct-profile-grid { grid-template-columns: 1fr; } }
+
+/* Usage report */
+.acct-usage-chart { width: 100%; height: 240px; }
+.acct-usage-filters { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+.acct-usage-filters .field { min-width: 140px; }
+.acct-tooltip {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; box-shadow: var(--shadow-lg);
+  font-size: 0.82rem; color: var(--text); display: flex; flex-direction: column; gap: 2px;
+}
+.acct-tooltip strong { font-variant-numeric: tabular-nums; }
+
+/* Help menu */
+.acct-help { position: relative; }
+.acct-help-btn {
+  width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text);
+  font: inherit; font-weight: 700; cursor: pointer; display: grid; place-items: center;
+}
+.acct-help-btn:hover { border-color: var(--primary); color: var(--primary); }
+.acct-help .menu { min-width: 250px; }
+.acct-menu-hint { display: block; font-size: 0.75rem; color: var(--muted); }
+
+/* Invitation page */
+.acct-invite-org { display: flex; align-items: center; gap: 10px; justify-content: center; margin-bottom: 8px; }
+.acct-invite-org img { max-height: 40px; max-width: 160px; }
+
+/* Maintenance */
+.acct-maint-row { display: flex; justify-content: space-between; gap: 16px; align-items: center; flex-wrap: wrap; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.acct-maint-row:last-child { border-bottom: none; }
+.acct-maint-row > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+
+.acct-model-option { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; }
+.acct-model-option:has(input:checked) { border-color: var(--primary); background: var(--primary-soft); }
+.acct-model-option input { margin-top: 3px; accent-color: var(--primary); }
+.acct-dl-compact { grid-template-columns: auto 1fr; }
