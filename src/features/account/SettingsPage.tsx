@@ -6,13 +6,14 @@ import { useT } from '../../i18n/index.tsx';
 import { formatNumber } from '../../lib/format.ts';
 import { useAsync } from '../../lib/useAsync.ts';
 import { AdminDomainsPanel } from './AdminDomainsPanel.tsx';
+import { AdminErrorLogPanel } from './AdminErrorLogPanel.tsx';
 import { AdminOrgsPanel } from './AdminOrgsPanel.tsx';
 import { AdminUsersPanel } from './AdminUsersPanel.tsx';
 import { UsageReport } from './UsageReport.tsx';
 import type { AdminSettings } from './types.ts';
 import './account.css';
 
-type Tab = 'ai' | 'email' | 'users' | 'orgs' | 'domains' | 'usage' | 'maintenance';
+type Tab = 'ai' | 'email' | 'users' | 'orgs' | 'domains' | 'usage' | 'errors' | 'maintenance';
 
 const TAB_KEY = 'leaseiq.settingsTab';
 
@@ -46,6 +47,7 @@ export default function SettingsPage() {
           { key: 'orgs', label: t('account.settings.tabOrgs') },
           { key: 'domains', label: t('account.settings.tabDomains') },
           { key: 'usage', label: t('account.settings.tabUsage') },
+          { key: 'errors', label: t('account.settings.tabErrors') },
           { key: 'maintenance', label: t('account.settings.tabMaintenance') },
         ]}
         active={tab}
@@ -59,6 +61,7 @@ export default function SettingsPage() {
       {tab === 'orgs' && <AdminOrgsPanel />}
       {tab === 'domains' && <AdminDomainsPanel />}
       {tab === 'usage' && <UsageReport scope="all" />}
+      {tab === 'errors' && <AdminErrorLogPanel />}
       {tab === 'maintenance' && <MaintenanceCard />}
     </div>
   );
@@ -119,6 +122,7 @@ function EmailCard({ settings, onSaved }: { settings: AdminSettings; onSaved: ()
   const [provider, setProvider] = useState(settings.email.provider);
   const [fromName, setFromName] = useState(settings.email.from_name);
   const [fromEmail, setFromEmail] = useState(settings.email.from_email);
+  const [apiKey, setApiKey] = useState('');
   const [testTo, setTestTo] = useState(me?.user.email ?? '');
   const [busy, setBusy] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -130,7 +134,8 @@ function EmailCard({ settings, onSaved }: { settings: AdminSettings; onSaved: ()
     setBusy(true);
     setError(null);
     try {
-      await put('/admin/settings/email', { provider, from_name: fromName.trim(), from_email: fromEmail.trim() });
+      await put('/admin/settings/email', { provider, from_name: fromName.trim(), from_email: fromEmail.trim(), sendgrid_api_key: apiKey.trim() || undefined });
+      setApiKey('');
       toast(t('account.settings.emailSaved'));
       onSaved();
     } catch (err) {
@@ -167,6 +172,22 @@ function EmailCard({ settings, onSaved }: { settings: AdminSettings; onSaved: ()
           {provider === 'sendgrid' && (
             <>
               {!settings.sendgrid_key_set && <Alert tone="warning">{t('account.settings.sendgridKeyMissing')}</Alert>}
+              <Field
+                label={t('account.settings.sendgridKey')}
+                hint={settings.sendgrid_key_set
+                  ? t(settings.sendgrid_key_source === 'settings' ? 'account.settings.sendgridKeySaved' : 'account.settings.sendgridKeyFromEnv', { last4: settings.sendgrid_key_hint ?? '' })
+                  : t('account.settings.sendgridKeyHint')}
+              >
+                <Input
+                  type="password"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder={settings.sendgrid_key_set ? `SG.••••${settings.sendgrid_key_hint ?? ''}` : 'SG.…'}
+                  autoComplete="off"
+                  spellCheck={false}
+                  required={!settings.sendgrid_key_set}
+                />
+              </Field>
               <Field label={t('account.settings.fromName')}>
                 <Input value={fromName} onChange={(e) => setFromName(e.target.value)} maxLength={100} />
               </Field>

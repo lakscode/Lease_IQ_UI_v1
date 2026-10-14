@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router';
 import { supabase } from '../../lib/supabase.ts';
+import { authErrorFields, rememberOAuthStart, reportError } from '../../lib/errorLog.ts';
 import { config } from '../../lib/config.ts';
 import { useAuth } from '../../auth/AuthProvider.tsx';
 import { Alert, Button, Field, Input } from '../../components/ui.tsx';
@@ -41,18 +42,29 @@ export default function SignupPage() {
       },
     });
     setBusy(false);
-    if (err) return setError(err.message);
+    if (err) {
+      reportError({ area: 'signup', email: email.trim(), ...authErrorFields(err) });
+      return setError(err.message);
+    }
+    // Supabase hides "already registered" (no error, a user without identities) so addresses can't be probed.
+    if (data.user && !data.user.identities?.length) {
+      reportError({ area: 'signup', level: 'warning', code: 'email_already_registered', email: email.trim(), message: 'Sign-up for an address that already has an account' });
+    }
     // With email confirmation off, Supabase signs the user in right away.
     if (data.session) navigate(next, { replace: true });
     else setSentTo(email.trim());
   };
 
   const sso = async (provider: 'google' | 'azure') => {
+    rememberOAuthStart('signup', provider);
     const { error: err } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo: `${window.location.origin}${next}`, scopes: provider === 'azure' ? 'email openid profile' : undefined },
     });
-    if (err) setError(err.message);
+    if (err) {
+      reportError({ area: 'signup.sso', ...authErrorFields(err), details: { provider } });
+      setError(err.message);
+    }
   };
 
   if (sentTo) {

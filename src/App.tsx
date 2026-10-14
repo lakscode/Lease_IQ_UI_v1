@@ -13,6 +13,7 @@ import AcceptInvitePage from './features/account/AcceptInvitePage.tsx';
 import ProfilePage from './features/account/ProfilePage.tsx';
 import OrganizationPage from './features/account/OrganizationPage.tsx';
 import SettingsPage from './features/account/SettingsPage.tsx';
+import LogsPage from './features/account/LogsPage.tsx';
 // Leases
 import LeasesPage from './features/leases/LeasesPage.tsx';
 import LeaseOverviewPage from './features/leases/LeaseOverviewPage.tsx';
@@ -56,6 +57,7 @@ export default function App() {
         <Route path="/import" element={<ImportPage />} />
         <Route path="/organization" element={<RequireRole><OrganizationPage /></RequireRole>} />
         <Route path="/settings" element={<RequireRole superAdmin><SettingsPage /></RequireRole>} />
+        <Route path="/logs" element={<RequireRole superAdmin><LogsPage /></RequireRole>} />
         <Route path="*" element={<NotFound />} />
       </Route>
 

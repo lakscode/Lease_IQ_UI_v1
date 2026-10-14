@@ -156,14 +156,14 @@ export default function LeaseDetailsPage() {
         {tab === 'abstract' && <AbstractTab detail={data} docId={docId} onDocChange={(id) => navigate({ doc: id })} onChanged={refresh} version={version} />}
         {tab === 'alerts' && <Card title={t('leases.tab.alerts')}><AlertList alerts={alerts} /></Card>}
         {tab === 'clauses' && <ClausesTab leaseId={lease.id} />}
-        {tab === 'documents' && <DocumentsTab detail={data} docId={docId} page={page} onSelect={(id, pg) => navigate({ doc: id, page: pg ?? null })} />}
-        {tab === 'signatures' && <SignaturesTab detail={data} onChanged={refresh} />}
-        {tab === 'record' && <RecordTab detail={data} />}
-        {tab === 'system' && <SystemRecordTab leaseId={lease.id} />}
         {tab === 'opportunities' && <OpportunitiesTab leaseId={lease.id} />}
         {tab === 'rentAudit' && <RentAuditTab leaseId={lease.id} />}
         {tab === 'cam' && <CamTab leaseId={lease.id} />}
         {tab === 'attachments' && <AttachmentsTab leaseId={lease.id} />}
+        {tab === 'documents' && <DocumentsTab detail={data} docId={docId} page={page} onSelect={(id, pg) => navigate({ doc: id, page: pg ?? null })} />}
+        {tab === 'signatures' && <SignaturesTab detail={data} onChanged={refresh} />}
+        {tab === 'record' && <RecordTab detail={data} />}
+        {tab === 'system' && <SystemRecordTab leaseId={lease.id} />}
         {tab === 'activity' && <ActivityTab leaseId={lease.id} version={version} />}
       </div>
     </div>

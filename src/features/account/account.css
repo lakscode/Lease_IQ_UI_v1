@@ -62,3 +62,6 @@
 .acct-model-option:has(input:checked) { border-color: var(--primary); background: var(--primary-soft); }
 .acct-model-option input { margin-top: 3px; accent-color: var(--primary); }
 .acct-dl-compact { grid-template-columns: auto 1fr; }
+
+/* Error log */
+.acct-error-details { margin: 6px 0 0; padding: 8px 10px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; font-size: 0.75rem; white-space: pre-wrap; word-break: break-word; max-width: 560px; }

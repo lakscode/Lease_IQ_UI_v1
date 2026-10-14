@@ -2,6 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase.ts';
+import { captureOAuthRedirectError } from '../lib/errorLog.ts';
 import { get, setActiveOrgId } from '../api/client.ts';
 import type { AppConfig, MeResponse, MyOrg, Role } from '../api/types.ts';
 import { useI18n, LOCALES, type Locale } from '../i18n/index.tsx';
@@ -48,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [activeOrgId, setActiveOrgIdState] = useState<string | null>(readStoredOrg);
 
   useEffect(() => {
+    captureOAuthRedirectError();
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setReady(true);

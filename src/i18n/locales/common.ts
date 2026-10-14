@@ -11,7 +11,7 @@ const dict: LocaleDict = {
     'nav.reports': 'Reports',
     'nav.import': 'Import',
     'nav.organization': 'Organization',
-    'nav.settings': 'Settings',
+    'nav.settings': 'Settings', 'nav.logs': 'Logs',
     'nav.profile': 'Profile',
     'nav.signOut': 'Sign out',
     'nav.switchOrg': 'Switch organization',
@@ -75,7 +75,7 @@ const dict: LocaleDict = {
   },
   de: {
     'nav.dashboard': 'Dashboard', 'nav.portfolio': 'Portfolio', 'nav.leases': 'Mietverträge', 'nav.assistant': 'Mietvertrags-Assistent',
-    'nav.reports': 'Berichte', 'nav.import': 'Import', 'nav.organization': 'Organisation', 'nav.settings': 'Einstellungen',
+    'nav.reports': 'Berichte', 'nav.import': 'Import', 'nav.organization': 'Organisation', 'nav.settings': 'Einstellungen', 'nav.logs': 'Protokolle',
     'nav.profile': 'Profil', 'nav.signOut': 'Abmelden', 'nav.switchOrg': 'Organisation wechseln', 'nav.language': 'Sprache',
     'common.save': 'Speichern', 'common.saving': 'Speichern…', 'common.cancel': 'Abbrechen', 'common.delete': 'Löschen',
     'common.edit': 'Bearbeiten', 'common.close': 'Schließen', 'common.confirm': 'Bestätigen', 'common.search': 'Suchen',
@@ -97,7 +97,7 @@ const dict: LocaleDict = {
   },
   es: {
     'nav.dashboard': 'Panel', 'nav.portfolio': 'Cartera', 'nav.leases': 'Arrendamientos', 'nav.assistant': 'Asistente de arrendamientos',
-    'nav.reports': 'Informes', 'nav.import': 'Importar', 'nav.organization': 'Organización', 'nav.settings': 'Configuración',
+    'nav.reports': 'Informes', 'nav.import': 'Importar', 'nav.organization': 'Organización', 'nav.settings': 'Configuración', 'nav.logs': 'Registros',
     'nav.profile': 'Perfil', 'nav.signOut': 'Cerrar sesión', 'nav.switchOrg': 'Cambiar de organización', 'nav.language': 'Idioma',
     'common.save': 'Guardar', 'common.saving': 'Guardando…', 'common.cancel': 'Cancelar', 'common.delete': 'Eliminar',
     'common.edit': 'Editar', 'common.close': 'Cerrar', 'common.confirm': 'Confirmar', 'common.search': 'Buscar',
@@ -119,7 +119,7 @@ const dict: LocaleDict = {
   },
   pt: {
     'nav.dashboard': 'Painel', 'nav.portfolio': 'Carteira', 'nav.leases': 'Arrendamentos', 'nav.assistant': 'Assistente de arrendamentos',
-    'nav.reports': 'Relatórios', 'nav.import': 'Importar', 'nav.organization': 'Organização', 'nav.settings': 'Definições',
+    'nav.reports': 'Relatórios', 'nav.import': 'Importar', 'nav.organization': 'Organização', 'nav.settings': 'Definições', 'nav.logs': 'Registos',
     'nav.profile': 'Perfil', 'nav.signOut': 'Terminar sessão', 'nav.switchOrg': 'Mudar de organização', 'nav.language': 'Idioma',
     'common.save': 'Guardar', 'common.saving': 'A guardar…', 'common.cancel': 'Cancelar', 'common.delete': 'Eliminar',
     'common.edit': 'Editar', 'common.close': 'Fechar', 'common.confirm': 'Confirmar', 'common.search': 'Pesquisar',
@@ -141,7 +141,7 @@ const dict: LocaleDict = {
   },
   it: {
     'nav.dashboard': 'Dashboard', 'nav.portfolio': 'Portafoglio', 'nav.leases': 'Locazioni', 'nav.assistant': 'Assistente locazioni',
-    'nav.reports': 'Report', 'nav.import': 'Importa', 'nav.organization': 'Organizzazione', 'nav.settings': 'Impostazioni',
+    'nav.reports': 'Report', 'nav.import': 'Importa', 'nav.organization': 'Organizzazione', 'nav.settings': 'Impostazioni', 'nav.logs': 'Log',
     'nav.profile': 'Profilo', 'nav.signOut': 'Esci', 'nav.switchOrg': 'Cambia organizzazione', 'nav.language': 'Lingua',
     'common.save': 'Salva', 'common.saving': 'Salvataggio…', 'common.cancel': 'Annulla', 'common.delete': 'Elimina',
     'common.edit': 'Modifica', 'common.close': 'Chiudi', 'common.confirm': 'Conferma', 'common.search': 'Cerca',

@@ -66,6 +66,12 @@ export default function AppLayout() {
               {t('nav.settings')}
             </NavLink>
           )}
+          {isSuperAdmin && (
+            <NavLink to="/logs" className="nav-link">
+              <span className="nav-icon" aria-hidden="true">☰</span>
+              {t('nav.logs')}
+            </NavLink>
+          )}
         </nav>
       </aside>
 

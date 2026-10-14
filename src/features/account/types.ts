@@ -97,6 +97,10 @@ export interface AdminSettings {
   ai_configured: boolean;
   email: { provider: 'default' | 'sendgrid'; from_name: string; from_email: string };
   sendgrid_key_set: boolean;
+  /** 'settings' = saved in Settings, 'environment' = SENDGRID_API_KEY on the server */
+  sendgrid_key_source: 'settings' | 'environment' | null;
+  /** Last 4 characters of the key in use */
+  sendgrid_key_hint: string | null;
   email_configured: boolean;
 }
 
@@ -145,4 +149,19 @@ export const ROLES: Role[] = ['admin', 'editor', 'viewer'];
 /** Only same-app relative paths are allowed as post-login destinations. */
 export function safeNext(value: string | null | undefined): string | null {
   return value && value.startsWith('/') && !value.startsWith('//') ? value : null;
+}
+
+export interface ErrorLogEntry {
+  id: number;
+  created_at: string;
+  source: 'ui' | 'api';
+  area: string;
+  level: 'error' | 'warning';
+  code: string | null;
+  message: string;
+  details: Record<string, unknown> | null;
+  user_id: string | null;
+  email: string | null;
+  path: string | null;
+  user_agent: string | null;
 }
