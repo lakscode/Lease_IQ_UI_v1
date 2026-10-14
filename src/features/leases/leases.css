@@ -107,7 +107,7 @@ a.lw-chip:hover { border-color: var(--primary); }
 .lw-seg button { background: var(--surface); border: none; padding: 5px 12px; font: inherit; font-size: 0.82rem; color: var(--text); cursor: pointer; }
 .lw-seg button + button { border-left: 1px solid var(--border-strong); }
 .lw-seg button:disabled { color: var(--muted); cursor: not-allowed; }
-.lw-seg .lw-seg-active { background: var(--primary); color: #fff; }
+.lw-seg .lw-seg-active { background: var(--primary); color: var(--on-primary); }
 
 /* Signatures & record */
 .lw-sig-head { margin-bottom: 10px; }

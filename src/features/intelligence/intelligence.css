@@ -38,10 +38,10 @@
 .intel-msg-user { align-self: flex-end; align-items: flex-end; }
 .intel-msg-assistant { align-self: flex-start; }
 .intel-bubble { padding: 10px 14px; border-radius: 12px; font-size: 0.92rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
-.intel-msg-user .intel-bubble { background: var(--primary); color: #fff; border-bottom-right-radius: 4px; }
+.intel-msg-user .intel-bubble { background: var(--primary); color: var(--on-primary); border-bottom-right-radius: 4px; }
 .intel-msg-assistant .intel-bubble { background: var(--surface-2); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
 .intel-cite { display: inline-block; font-size: 0.7rem; font-weight: 650; vertical-align: super; line-height: 1; margin: 0 1px; padding: 1px 4px; border-radius: 4px; background: var(--primary-soft); color: var(--primary); text-decoration: none; }
-.intel-cite:hover { background: var(--primary); color: #fff; }
+.intel-cite:hover { background: var(--primary); color: var(--on-primary); }
 .intel-sources { display: flex; flex-direction: column; gap: 4px; }
 .intel-source-label { font-size: 0.75rem; color: var(--muted); }
 .intel-usage { font-size: 0.72rem; color: var(--muted); }
