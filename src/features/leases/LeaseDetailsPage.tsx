@@ -2,7 +2,8 @@
 // rent audit, CAM, supporting documents and activity. Deep links: ?tab=&doc=&page=
 import { useCallback, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
-import { Button, Card, ErrorState, LeaseStatusBadge, PageHeader, Spinner, Tabs, useToast } from '../../components/ui.tsx';
+import { Button, Card, ErrorState, LeaseStatusBadge, PageHeader, Spinner, Tabs } from '../../components/ui.tsx';
+import { useToast } from '../../components/feedback.ts';
 import { EmailDialog } from '../../components/EmailDialog.tsx';
 import { useT } from '../../i18n/index.tsx';
 import { get, getBlob, post, saveBlob } from '../../api/client.ts';
@@ -23,7 +24,7 @@ import UploadZone from './UploadZone.tsx';
 import { AlertList } from './shared.tsx';
 import { errorText } from './labels.ts';
 import type { LeaseDetail } from './types.ts';
-import { useAuth } from '../../auth/AuthProvider.tsx';
+import { useAuth } from '../../auth/useAuth.ts';
 import './leases.css';
 
 const TABS = ['abstract', 'alerts', 'rentAudit', 'cam', 'opportunities', 'clauses', 'documents', 'signatures', 'record', 'system', 'attachments', 'activity'] as const;

@@ -1,27 +1,9 @@
 // Shared chart pieces for the analytics pages (recharts 3). Colors come from the --chart-* CSS variables so
 // light and dark mode both work. Every chart card has a table view (values never gated behind hover).
 import { useState, type ReactNode } from 'react';
-import { Card, cx } from '../../components/ui.tsx';
+import { Card } from '../../components/ui.tsx';
+import { cx } from '../../components/ui-utils.ts';
 import { useT } from '../../i18n/index.tsx';
-
-export const AXIS_TICK = { fill: 'var(--muted)', fontSize: 12 };
-export const GRID_STROKE = 'var(--chart-grid)';
-export const BAR_RADIUS: [number, number, number, number] = [4, 4, 0, 0];
-export const HBAR_RADIUS: [number, number, number, number] = [0, 4, 4, 0];
-export const MAX_BAR = 24;
-
-/** Compact numbers for axis ticks: 1.2K, 3.4M (money keeps its currency symbol). */
-export function compact(value: number, currency?: string): string {
-  try {
-    return new Intl.NumberFormat(undefined, {
-      notation: 'compact',
-      maximumFractionDigits: 1,
-      ...(currency ? { style: 'currency', currency, currencyDisplay: 'narrowSymbol' } : {}),
-    }).format(value);
-  } catch {
-    return String(value);
-  }
-}
 
 /** Chart card with a Chart / Table toggle. */
 export function ChartCard({ title, subtitle, table, children, actions, className }: {

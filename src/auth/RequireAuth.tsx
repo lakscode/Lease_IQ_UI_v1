@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link, Navigate, useLocation } from 'react-router';
-import { useAuth } from './AuthProvider.tsx';
+import { useAuth } from './useAuth.ts';
 import { Button, EmptyState, ErrorState, Spinner } from '../components/ui.tsx';
 import { useT } from '../i18n/index.tsx';
 

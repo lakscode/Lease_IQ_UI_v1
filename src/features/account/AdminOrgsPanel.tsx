@@ -1,8 +1,9 @@
 // Super admin organization management: create, rename, choose the clause classifier, delete (only when empty), manage members.
 import { useState } from 'react';
 import { del, get, patch, post } from '../../api/client.ts';
-import { useAuth } from '../../auth/AuthProvider.tsx';
-import { Alert, Badge, Button, Card, EmptyState, ErrorState, Field, Input, Modal, Select, Spinner, useConfirm, useToast } from '../../components/ui.tsx';
+import { useAuth } from '../../auth/useAuth.ts';
+import { Alert, Badge, Button, Card, EmptyState, ErrorState, Field, Input, Modal, Select, Spinner } from '../../components/ui.tsx';
+import { useConfirm, useToast } from '../../components/feedback.ts';
 import { useT } from '../../i18n/index.tsx';
 import { formatDate } from '../../lib/format.ts';
 import { useAsync } from '../../lib/useAsync.ts';
@@ -11,13 +12,20 @@ import { CURRENCIES, type AdminOrg, type ClauseClassifier, type ClauseClassifier
 import './account.css';
 
 const hasData = (o: AdminOrg) => o.lease_count + o.file_count + o.document_count > 0;
+const CLASSIFIERS: ClauseClassifier[] = ['claude', 'svm', 'gateway', 'langchain', 'llama'];
+const usesModel = (c: ClauseClassifier) => c === 'gateway' || c === 'langchain' || c === 'llama';
+const CLASSIFIER_TONE = { claude: 'neutral', svm: 'info', gateway: 'primary', langchain: 'warning', llama: 'success' } as const;
+const isLlama = (m: string) => /^meta\/llama/i.test(m);
+/** Configured but refusing requests (e.g. no credits): calls fall back to the SVM. */
+const gatewayBlocked = (info: ClauseClassifierInfo | null | undefined, c: ClauseClassifier) =>
+  Boolean(info && usesModel(c) && info.gateway_status.configured && !info.gateway_status.ready);
 
 function ClassifierBadge({ org }: { org: AdminOrg }) {
   const t = useT();
   const kind = org.clause_classifier ?? 'svm';
   return (
-    <Badge tone={kind === 'svm' ? 'info' : kind === 'gateway' ? 'primary' : 'neutral'} title={org.clause_model ?? undefined}>
-      {t(`account.orgs.classifier.${kind}`)}{kind === 'gateway' && org.clause_model ? ` · ${org.clause_model}` : ''}
+    <Badge tone={CLASSIFIER_TONE[kind] ?? 'neutral'} title={org.clause_model ?? undefined}>
+      {t(`account.orgs.classifier.${kind}`)}{usesModel(kind) && org.clause_model ? ` · ${org.clause_model}` : ''}
     </Badge>
   );
 }
@@ -124,7 +132,7 @@ function OrgModal({ org, onClose, onDone }: { org: AdminOrg | null; onClose: () 
     setBusy(true);
     setError(null);
     try {
-      const clause = { clause_classifier: classifier, clause_model: classifier === 'gateway' ? model.trim() : null };
+      const clause = { clause_classifier: classifier, clause_model: usesModel(classifier) ? model.trim() || null : null };
       if (org) await patch(`/admin/orgs/${org.id}`, { name: name.trim(), currency, ...clause });
       else await post('/admin/orgs', { name: name.trim(), currency, add_me: addMe, ...clause });
       toast(org ? t('account.orgs.saved') : t('account.orgs.created', { name: name.trim() }));
@@ -174,27 +182,50 @@ function ClassifierFields({ info, classifier, model, onClassifier, onModel }: {
     ? t('account.orgs.classifierHint.claude', { model: info?.claude.model ?? '' })
     : classifier === 'svm'
       ? t('account.orgs.classifierHint.svm', { types: info?.svm.clause_types ?? '', date: info ? formatDate(info.svm.trained_at) : '' })
-      : t('account.orgs.classifierHint.gateway');
+      : t(`account.orgs.classifierHint.${classifier}`);
+  const models = classifier === 'langchain' || classifier === 'llama' ? info?.[classifier].models : info?.gateway.models;
+  const pick = (c: ClauseClassifier) => {
+    onClassifier(c);
+    // Pre-fill each classifier's default model when the current one doesn't fit it.
+    if (c === 'llama' && !isLlama(model)) onModel(info?.llama.default_model ?? 'meta/llama-4-scout');
+    else if (c === 'langchain' && !model) onModel(info?.langchain.default_model ?? 'openai/gpt-5.4-mini');
+  };
   return (
     <>
       <Field label={t('account.orgs.classifierLabel')} hint={hint}>
-        <Select value={classifier} onChange={(e) => onClassifier(e.target.value as ClauseClassifier)}>
-          {(['claude', 'svm', 'gateway'] as const).map((c) => (
+        <Select value={classifier} onChange={(e) => pick(e.target.value as ClauseClassifier)}>
+          {CLASSIFIERS.map((c) => (
             <option key={c} value={c}>
-              {t(`account.orgs.classifier.${c}`)}{info && !info[c].configured ? ` (${t('account.orgs.classifierNotConfigured')})` : ''}
+              {t(`account.orgs.classifier.${c}`)}
+              {info && !info[c].configured ? ` (${t('account.orgs.classifierNotConfigured')})` : gatewayBlocked(info, c) ? ` (${t('account.orgs.gatewayNoCredits')})` : ''}
             </option>
           ))}
         </Select>
       </Field>
-      {classifier === 'gateway' && (
-        <Field label={t('account.orgs.gatewayModel')} hint={info?.gateway.models.length ? undefined : t('account.orgs.gatewayModelHint')}>
-          <Input value={model} onChange={(e) => onModel(e.target.value)} list="acct-gateway-models" placeholder="openai/gpt-5" maxLength={120} required />
+      {usesModel(classifier) && (
+        <Field
+          label={t(classifier === 'llama' ? 'account.orgs.llamaModel' : 'account.orgs.gatewayModel')}
+          hint={models?.length ? undefined : t('account.orgs.gatewayModelHint')}
+        >
+          <Input
+            value={model}
+            onChange={(e) => onModel(e.target.value)}
+            list="acct-gateway-models"
+            placeholder={classifier === 'llama' ? 'meta/llama-4-scout' : classifier === 'langchain' ? 'openai/gpt-5.4-mini' : 'openai/gpt-5'}
+            maxLength={120}
+            required={classifier === 'gateway'}
+          />
           <datalist id="acct-gateway-models">
-            {(info?.gateway.models ?? []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+            {(models ?? []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
           </datalist>
         </Field>
       )}
       {!configured && <Alert tone="warning">{t(`account.orgs.classifierMissingKey.${classifier}`)}</Alert>}
+      {gatewayBlocked(info, classifier) && (
+        <Alert tone="warning" title={t('account.orgs.gatewayBlockedTitle')}>
+          {info?.gateway_status.error ?? t('account.orgs.gatewayBlockedBody', { balance: info?.gateway_status.balance ?? '0' })}
+        </Alert>
+      )}
     </>
   );
 }

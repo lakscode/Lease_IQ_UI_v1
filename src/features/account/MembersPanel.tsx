@@ -3,10 +3,9 @@
 import { useMemo, useState } from 'react';
 import { del, get, getBlob, patch, post, saveBlob } from '../../api/client.ts';
 import type { Role } from '../../api/types.ts';
-import { useAuth } from '../../auth/AuthProvider.tsx';
-import {
-  Alert, Badge, Button, Card, EmptyState, ErrorState, Field, Input, Modal, Select, Spinner, useConfirm, useToast,
-} from '../../components/ui.tsx';
+import { useAuth } from '../../auth/useAuth.ts';
+import { Alert, Badge, Button, Card, EmptyState, ErrorState, Field, Input, Modal, Select, Spinner } from '../../components/ui.tsx';
+import { useConfirm, useToast } from '../../components/feedback.ts';
 import { useT } from '../../i18n/index.tsx';
 import { formatDate, formatDateTime } from '../../lib/format.ts';
 import { useAsync } from '../../lib/useAsync.ts';

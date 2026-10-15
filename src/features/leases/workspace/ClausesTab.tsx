@@ -14,13 +14,15 @@ function ConfidenceBadge({ value }: { value: number | null }) {
   return <Badge tone={tone}>{formatPercent(value)}</Badge>;
 }
 
-const SOURCES: ClauseSource[] = ['claude', 'svm', 'gateway'];
+const SOURCES: ClauseSource[] = ['claude', 'svm', 'gateway', 'langchain', 'llama'];
+const SOURCE_TONE = { claude: 'neutral', svm: 'info', gateway: 'primary', langchain: 'warning', llama: 'success' } as const;
+const SHOWS_MODEL = new Set<ClauseSource>(['gateway', 'langchain', 'llama']);
 
 function SourceBadge({ source, model }: { source: ClauseSource; model: string | null }) {
   const t = useT();
   return (
-    <Badge tone={source === 'svm' ? 'info' : source === 'gateway' ? 'primary' : 'neutral'} title={t(`leases.clauses.sourceHint.${source}`, { model: model ?? '' }).replace(/\s*\(\)$/, '')}>
-      {t(`leases.clauses.source.${source}`)}{source === 'gateway' && model ? ` · ${model}` : ''}
+    <Badge tone={SOURCE_TONE[source] ?? 'neutral'} title={t(`leases.clauses.sourceHint.${source}`, { model: model ?? '' }).replace(/\s*\(\)$/, '')}>
+      {t(`leases.clauses.source.${source}`)}{SHOWS_MODEL.has(source) && model ? ` · ${model}` : ''}
     </Badge>
   );
 }
@@ -45,7 +47,7 @@ export default function ClausesTab({ leaseId }: { leaseId: string }) {
       .filter((g) => g.clauses.length > 0);
   }, [data, filter, source]);
   const sourceCounts = useMemo(() => {
-    const counts: Record<ClauseSource, number> = { claude: 0, svm: 0, gateway: 0 };
+    const counts: Record<ClauseSource, number> = { claude: 0, svm: 0, gateway: 0, langchain: 0, llama: 0 };
     for (const g of data ?? []) for (const c of g.clauses) counts[c.source ?? 'claude']++;
     return counts;
   }, [data]);
@@ -61,7 +63,7 @@ export default function ClausesTab({ leaseId }: { leaseId: string }) {
         <span className="muted">{t('leases.clauses.summary', { count: total, types: data.length })}</span>
         <div className="row">
           <Select value={source} onChange={(e) => setSource(e.target.value as 'all' | ClauseSource)} aria-label={t('leases.clauses.sourceFilter')}>
-            <option value="all">{t('leases.clauses.source.all')} ({sourceCounts.claude + sourceCounts.svm + sourceCounts.gateway})</option>
+            <option value="all">{t('leases.clauses.source.all')} ({SOURCES.reduce((n, src) => n + sourceCounts[src], 0)})</option>
             {SOURCES.filter((src) => sourceCounts[src] > 0 || src === source).map((src) => (
               <option key={src} value={src}>{t(`leases.clauses.source.${src}`)} ({sourceCounts[src]})</option>
             ))}

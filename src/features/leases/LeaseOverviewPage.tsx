@@ -3,7 +3,7 @@
 import { Link, useParams } from 'react-router';
 import { Card, EmptyState, ErrorState, LeaseStatusBadge, PageHeader, Spinner, StatTile } from '../../components/ui.tsx';
 import { useT } from '../../i18n/index.tsx';
-import { useAuth } from '../../auth/AuthProvider.tsx';
+import { useAuth } from '../../auth/useAuth.ts';
 import { get } from '../../api/client.ts';
 import { useAsync } from '../../lib/useAsync.ts';
 import { daysUntil, formatDate, formatMoney, formatNumber } from '../../lib/format.ts';

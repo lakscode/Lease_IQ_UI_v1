@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { patch, post } from '../../api/client.ts';
-import { useAuth } from '../../auth/AuthProvider.tsx';
-import { Alert, Badge, Button, Card, Field, Input, PageHeader, Select, Spinner, useToast } from '../../components/ui.tsx';
+import { useAuth } from '../../auth/useAuth.ts';
+import { Alert, Badge, Button, Card, Field, Input, PageHeader, Select, Spinner } from '../../components/ui.tsx';
+import { useToast } from '../../components/feedback.ts';
 import { LOCALE_NAMES, LOCALES, useI18n, type Locale } from '../../i18n/index.tsx';
 import { formatDate, formatDateTime } from '../../lib/format.ts';
 import { supabase } from '../../lib/supabase.ts';

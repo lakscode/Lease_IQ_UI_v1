@@ -1,35 +1,14 @@
 // Session (Supabase, per tab) + who-am-I (/api/me) + active organization.
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase.ts';
 import { captureOAuthRedirectError } from '../lib/errorLog.ts';
 import { get, setActiveOrgId } from '../api/client.ts';
-import type { AppConfig, MeResponse, MyOrg, Role } from '../api/types.ts';
+import type { AppConfig, MeResponse } from '../api/types.ts';
 import { useI18n, LOCALES, type Locale } from '../i18n/index.tsx';
+import { AuthContext, type AuthValue } from './useAuth.ts';
 
 const ORG_KEY = 'leaseiq.activeOrg';
-
-interface AuthValue {
-  /** null while the initial session check runs */
-  ready: boolean;
-  session: Session | null;
-  me: MeResponse | null;
-  meError: string | null;
-  config: AppConfig | null;
-  orgs: MyOrg[];
-  activeOrg: MyOrg | null;
-  role: Role | null;
-  isSuperAdmin: boolean;
-  /** admin or editor in the active org */
-  canEdit: boolean;
-  isOrgAdmin: boolean;
-  currency: string;
-  switchOrg: (orgId: string) => void;
-  refreshMe: () => Promise<void>;
-  signOut: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthValue | null>(null);
 
 function readStoredOrg(): string | null {
   try {
@@ -139,10 +118,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [ready, session, me, meError, config, activeOrgId, switchOrg, refreshMe, signOut]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth(): AuthValue {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used inside <AuthProvider>');
-  return ctx;
 }

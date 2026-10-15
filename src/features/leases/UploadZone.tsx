@@ -1,9 +1,11 @@
 // Drag-and-drop / file chooser / cloud picker upload of lease PDFs. Each file goes straight to storage with a
 // signed upload URL, then is registered with POST /api/files (which starts processing).
 import { useRef, useState, type DragEvent } from 'react';
-import { Button, cx, useToast } from '../../components/ui.tsx';
+import { Button } from '../../components/ui.tsx';
+import { cx } from '../../components/ui-utils.ts';
+import { useToast } from '../../components/feedback.ts';
 import { useT } from '../../i18n/index.tsx';
-import { useAuth } from '../../auth/AuthProvider.tsx';
+import { useAuth } from '../../auth/useAuth.ts';
 import { post } from '../../api/client.ts';
 import { supabase } from '../../lib/supabase.ts';
 import { formatBytes } from '../../lib/format.ts';

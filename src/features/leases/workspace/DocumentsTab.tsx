@@ -1,13 +1,15 @@
 // PDF viewer (signed URL in an iframe, #page=N) and page text viewer for one document of the lease.
 import { useEffect, useState } from 'react';
-import { Alert, Button, Card, Select, Spinner, cx, useToast } from '../../../components/ui.tsx';
+import { Alert, Button, Card, Select, Spinner } from '../../../components/ui.tsx';
+import { cx } from '../../../components/ui-utils.ts';
+import { useToast } from '../../../components/feedback.ts';
 import { useT } from '../../../i18n/index.tsx';
 import { get } from '../../../api/client.ts';
 import { useAsync } from '../../../lib/useAsync.ts';
 import { formatDate } from '../../../lib/format.ts';
 import { DocTypeBadge } from '../shared.tsx';
 import { documentName } from '../labels.ts';
-import { openSignedUrl } from '../FileCard.tsx';
+import { openSignedUrl } from '../open-signed-url.ts';
 import type { LeaseDetail } from '../types.ts';
 
 export default function DocumentsTab({ detail, docId, page, onSelect }: {

@@ -5,16 +5,17 @@ import { Link, useSearchParams } from 'react-router';
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { get, getBlob, post, saveBlob } from '../../api/client.ts';
 import type { LeaseStatus } from '../../api/types.ts';
-import { useAuth } from '../../auth/AuthProvider.tsx';
+import { useAuth } from '../../auth/useAuth.ts';
 import { EmailDialog } from '../../components/EmailDialog.tsx';
-import {
-  Button, Card, EmptyState, ErrorState, Field, Input, LeaseStatusBadge, PageHeader, Select, SortHeader, Spinner, sortRows, useToast,
-} from '../../components/ui.tsx';
+import { Button, Card, EmptyState, ErrorState, Field, Input, LeaseStatusBadge, PageHeader, Select, SortHeader, Spinner } from '../../components/ui.tsx';
+import { sortRows } from '../../components/ui-utils.ts';
+import { useToast } from '../../components/feedback.ts';
 import { useT } from '../../i18n/index.tsx';
 import { formatDate, formatMoney, formatNumber } from '../../lib/format.ts';
 import { useAsync } from '../../lib/useAsync.ts';
 import SaveToCloudMenu from '../cloud/SaveToCloudMenu.tsx';
-import { AXIS_TICK, BAR_RADIUS, ChartCard, ChartTip, GRID_STROKE, HBAR_RADIUS, MAX_BAR, compact } from './charts.tsx';
+import { ChartCard, ChartTip } from './charts.tsx';
+import { AXIS_TICK, BAR_RADIUS, GRID_STROKE, HBAR_RADIUS, MAX_BAR, compact } from './chart-style.ts';
 import type { ReportData, ReportRow } from './types.ts';
 import './analytics.css';
 

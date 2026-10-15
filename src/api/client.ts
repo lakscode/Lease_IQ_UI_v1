@@ -1,14 +1,44 @@
 // Lease IQ API client. Adds the Supabase access token and the active organization (X-Org-Id).
 import { config } from '../lib/config.ts';
 import { supabase } from '../lib/supabase.ts';
+import { reportError } from '../lib/errorLog.ts';
 
 export class ApiError extends Error {
   status: number;
   code: string;
   constructor(message: string, status: number, code = 'error') {
     super(message);
+    this.name = 'ApiError';
     this.status = status;
     this.code = code;
+  }
+}
+
+/**
+ * Report failed API calls to the error log: server errors (5xx) and network failures. 4xx are expected
+ * (validation, permissions) and stay out; the error-log endpoint itself is never reported (no loops).
+ */
+function reportFailure(method: string, path: string, err: unknown, status?: number, code?: string) {
+  if (path.startsWith('/client-errors')) return;
+  if ((err as Error)?.name === 'AbortError') return;
+  if (status !== undefined && status < 500) return;
+  const notConfigured = code === 'ai_not_configured' || code === 'email_not_configured' || code === 'integration_not_configured';
+  reportError({
+    area: status === undefined ? 'ui.network' : 'ui.api',
+    level: notConfigured ? 'warning' : 'error',
+    code: code ?? (status === undefined ? 'network_error' : String(status)),
+    message: `${method} ${path.split('?')[0]} → ${status ?? 'no response'}: ${(err as Error)?.message ?? String(err)}`,
+    details: { method, path: path.split('?')[0], status: status ?? null },
+  });
+}
+
+/** fetch() that reports network failures, then rethrows. */
+async function send(method: string, path: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(apiUrl(path), init);
+  } catch (err) {
+    reportFailure(method, path, err);
+    throw err;
   }
 }
 
@@ -68,13 +98,17 @@ export interface RequestOptions {
 
 export async function api<T = unknown>(method: string, path: string, opts: RequestOptions = {}): Promise<T> {
   const isForm = opts.body instanceof FormData;
-  const res = await fetch(apiUrl(withQuery(path, opts.query)), {
+  const res = await send(method, withQuery(path, opts.query), {
     method,
     headers: await headers(undefined, opts.body !== undefined && !isForm),
     body: opts.body === undefined ? undefined : isForm ? (opts.body as FormData) : JSON.stringify(opts.body),
     signal: opts.signal,
   });
-  if (!res.ok) throw await toError(res);
+  if (!res.ok) {
+    const err = await toError(res);
+    reportFailure(method, path, err, err.status, err.code);
+    throw err;
+  }
   if (res.status === 204) return undefined as T;
   const text = await res.text();
   return (text ? JSON.parse(text) : undefined) as T;
@@ -88,12 +122,16 @@ export const del = <T>(path: string, body?: unknown) => api<T>('DELETE', path, {
 
 /** Fetch a binary response (PDF, CSV). Returns the blob and the server-suggested filename. */
 export async function getBlob(path: string, query?: Query, method = 'GET', body?: unknown): Promise<{ blob: Blob; filename: string | null }> {
-  const res = await fetch(apiUrl(withQuery(path, query)), {
+  const res = await send(method, withQuery(path, query), {
     method,
     headers: await headers(undefined, body !== undefined),
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-  if (!res.ok) throw await toError(res);
+  if (!res.ok) {
+    const err = await toError(res);
+    reportFailure(method, path, err, err.status, err.code);
+    throw err;
+  }
   const disposition = res.headers.get('Content-Disposition') || '';
   const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition);
   return { blob: await res.blob(), filename: match ? decodeURIComponent(match[1]) : null };

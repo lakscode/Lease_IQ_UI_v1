@@ -2,14 +2,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { del, get, patch, post } from '../../api/client.ts';
-import { useAuth } from '../../auth/AuthProvider.tsx';
-import {
-  Badge, Button, Card, EmptyState, ErrorState, Field, Input, Modal, Select, Spinner, StatTile, useConfirm, useToast,
-} from '../../components/ui.tsx';
+import { useAuth } from '../../auth/useAuth.ts';
+import { Badge, Button, Card, EmptyState, ErrorState, Field, Input, Modal, Select, Spinner, StatTile } from '../../components/ui.tsx';
+import { useConfirm, useToast } from '../../components/feedback.ts';
 import { useT } from '../../i18n/index.tsx';
 import { formatDate, formatMoney, formatNumber, formatPercent } from '../../lib/format.ts';
 import { useAsync } from '../../lib/useAsync.ts';
-import { errorText, numStr, parseNum } from './shared.tsx';
+import { errorText, numStr, parseNum } from './helpers.ts';
 import './intelligence.css';
 
 interface MarketRate { id: string; property_type: string; rate_psf_annual: number; source: string | null; as_of: string | null; address_match: string | null }

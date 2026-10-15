@@ -1,12 +1,14 @@
 // CAM reconciliation for one lease: inputs and settings → server-side calculation; one saved reconciliation per year.
 import { useEffect, useRef, useState } from 'react';
 import { del, get, post, put } from '../../api/client.ts';
-import { useAuth } from '../../auth/AuthProvider.tsx';
-import { Alert, Button, Card, ErrorState, Field, Input, Select, Spinner, StatTile, useConfirm, useToast } from '../../components/ui.tsx';
+import { useAuth } from '../../auth/useAuth.ts';
+import { Alert, Button, Card, ErrorState, Field, Input, Select, Spinner, StatTile } from '../../components/ui.tsx';
+import { useConfirm, useToast } from '../../components/feedback.ts';
 import { useT } from '../../i18n/index.tsx';
 import { formatDateTime, formatMoney } from '../../lib/format.ts';
 import { useAsync } from '../../lib/useAsync.ts';
-import { errorText, numStr, parseNum, type CamTerms } from './shared.tsx';
+import { type CamTerms } from './shared.tsx';
+import { errorText, numStr, parseNum } from './helpers.ts';
 
 interface CamResult {
   recoverable: number; gross_up_adjustment: number; grossed_up_pool: number; cap_applied: boolean; cap_subject: number | null;

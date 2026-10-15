@@ -1,10 +1,11 @@
 import { NavLink, Outlet, useNavigate } from 'react-router';
 import { useState } from 'react';
-import { useAuth } from '../auth/AuthProvider.tsx';
+import { useAuth } from '../auth/useAuth.ts';
 import { LOCALE_NAMES, LOCALES, useI18n, type Locale } from '../i18n/index.tsx';
 import { patch } from '../api/client.ts';
 import { HelpButton } from '../features/account/HelpButton.tsx';
-import { cx } from './ui.tsx';
+import { cx } from './ui-utils.ts';
+import { BrandLogo } from './BrandLogo.tsx';
 
 const NAV = [
   { to: '/dashboard', key: 'nav.dashboard', icon: '▦' },
@@ -39,12 +40,8 @@ export default function AppLayout() {
     <div className={cx('app-shell', navOpen && 'nav-open')}>
       <aside className="sidebar">
         <div className="brand">
-          {activeOrg?.logo_url ? (
-            <img src={activeOrg.logo_url} alt="" className="brand-logo" />
-          ) : (
-            <span className="brand-mark">IQ</span>
-          )}
-          <span className="brand-name">{t('app.name')}</span>
+          <BrandLogo />
+          {activeOrg?.logo_url && <img src={activeOrg.logo_url} alt="" className="brand-logo brand-org-logo" />}
         </div>
         <nav className="nav" onClick={() => setNavOpen(false)}>
           {NAV.map((item) => (

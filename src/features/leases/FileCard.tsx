@@ -1,28 +1,17 @@
 // One uploaded file on the Leases page: status, documents found, badges, token use and actions.
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { Alert, Badge, Button, Modal, Spinner, ErrorState, useConfirm, useToast } from '../../components/ui.tsx';
+import { Alert, Badge, Button, Modal, Spinner, ErrorState } from '../../components/ui.tsx';
+import { useConfirm, useToast } from '../../components/feedback.ts';
 import { useT } from '../../i18n/index.tsx';
-import { useAuth } from '../../auth/AuthProvider.tsx';
+import { useAuth } from '../../auth/useAuth.ts';
 import { del, get, post } from '../../api/client.ts';
 import { useAsync } from '../../lib/useAsync.ts';
 import { formatBytes, formatDateTime, formatTokens } from '../../lib/format.ts';
 import { DocTypeBadge, FileStatusBadge } from './shared.tsx';
 import { errorText, stepLabel } from './labels.ts';
+import { openSignedUrl } from './open-signed-url.ts';
 import type { LeaseFile, PipelineStep, ProcessingLog } from './types.ts';
-
-export async function openSignedUrl(load: () => Promise<{ url: string }>, onError: (msg: string) => void) {
-  // Open the tab first so popup blockers allow it, then point it at the signed URL.
-  const win = window.open('', '_blank');
-  try {
-    const { url } = await load();
-    if (win) win.location.href = url;
-    else window.location.href = url;
-  } catch (err) {
-    win?.close();
-    onError((err as Error).message);
-  }
-}
 
 export function StepList({ steps }: { steps: PipelineStep[] }) {
   const t = useT();

@@ -1,9 +1,10 @@
 // Signatures (per document, with AI re-check) and Document of record (fingerprint, verify now, access log).
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { Alert, Badge, Button, Card, EmptyState, ErrorState, Spinner, useToast } from '../../../components/ui.tsx';
+import { Alert, Badge, Button, Card, EmptyState, ErrorState, Spinner } from '../../../components/ui.tsx';
+import { useToast } from '../../../components/feedback.ts';
 import { useT } from '../../../i18n/index.tsx';
-import { useAuth } from '../../../auth/AuthProvider.tsx';
+import { useAuth } from '../../../auth/useAuth.ts';
 import { get, post } from '../../../api/client.ts';
 import { useAsync } from '../../../lib/useAsync.ts';
 import { formatDate, formatDateTime } from '../../../lib/format.ts';

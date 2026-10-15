@@ -2,7 +2,7 @@
 // shown next to the lease terms, with mismatches highlighted.
 import { Link } from 'react-router';
 import { get } from '../../api/client.ts';
-import { useAuth } from '../../auth/AuthProvider.tsx';
+import { useAuth } from '../../auth/useAuth.ts';
 import { Alert, Badge, Card, EmptyState, ErrorState, Spinner } from '../../components/ui.tsx';
 import { useT } from '../../i18n/index.tsx';
 import { formatDate, formatDateTime, formatMoney, formatNumber } from '../../lib/format.ts';

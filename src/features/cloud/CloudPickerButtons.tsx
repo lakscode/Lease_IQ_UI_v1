@@ -1,7 +1,8 @@
 // "Pick from Google Drive / OneDrive / SharePoint" buttons. Each provider's button only renders when it is
 // configured (VITE_GOOGLE_* / VITE_MS_CLIENT_ID); with neither configured the component renders nothing.
 import { useState } from 'react';
-import { Button, useToast } from '../../components/ui.tsx';
+import { Button } from '../../components/ui.tsx';
+import { useToast } from '../../components/feedback.ts';
 import { useT } from '../../i18n/index.tsx';
 import { googleConfigured, microsoftConfigured } from '../../lib/config.ts';
 import { GraphBrowser, type GraphSource } from './GraphBrowser.tsx';

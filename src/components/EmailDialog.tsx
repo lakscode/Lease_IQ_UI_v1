@@ -2,7 +2,7 @@
 import { useState, type ReactNode } from 'react';
 import { Alert, Button, Field, Input, Modal, Textarea } from './ui.tsx';
 import { useT } from '../i18n/index.tsx';
-import { useAuth } from '../auth/AuthProvider.tsx';
+import { useAuth } from '../auth/useAuth.ts';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

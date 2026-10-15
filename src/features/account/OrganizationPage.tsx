@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { del, get, patch, post } from '../../api/client.ts';
-import { useAuth } from '../../auth/AuthProvider.tsx';
-import { Alert, Button, Card, ErrorState, Field, Input, PageHeader, Select, Spinner, Tabs, useToast } from '../../components/ui.tsx';
+import { useAuth } from '../../auth/useAuth.ts';
+import { Alert, Button, Card, ErrorState, Field, Input, PageHeader, Select, Spinner, Tabs } from '../../components/ui.tsx';
+import { useToast } from '../../components/feedback.ts';
 import { useT } from '../../i18n/index.tsx';
 import { formatDate } from '../../lib/format.ts';
 import { useAsync } from '../../lib/useAsync.ts';

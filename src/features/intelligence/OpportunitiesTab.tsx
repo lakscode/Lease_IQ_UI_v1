@@ -1,14 +1,14 @@
 // Opportunities for one lease: AI review against 20 revenue/risk categories (embedded in the lease workspace).
 import { useEffect, useMemo, useState } from 'react';
 import { get, post } from '../../api/client.ts';
-import { useAuth } from '../../auth/AuthProvider.tsx';
-import { Alert, Badge, Button, Card, EmptyState, ErrorState, Spinner, StatTile, useToast } from '../../components/ui.tsx';
+import { useAuth } from '../../auth/useAuth.ts';
+import { Alert, Badge, Button, Card, EmptyState, ErrorState, Spinner, StatTile } from '../../components/ui.tsx';
+import { useToast } from '../../components/feedback.ts';
 import { useT } from '../../i18n/index.tsx';
 import { formatDate, formatDateTime, formatMoney } from '../../lib/format.ts';
 import { useAsync } from '../../lib/useAsync.ts';
-import {
-  AiNotConfigured, JobStatusBadge, PageLink, PriorityBadge, errorText, isAiNotConfigured, type LeaseDocumentOption,
-} from './shared.tsx';
+import { AiNotConfigured, JobStatusBadge, PageLink, PriorityBadge, type LeaseDocumentOption } from './shared.tsx';
+import { errorText, isAiNotConfigured } from './helpers.ts';
 
 export interface Opportunity {
   id: string;

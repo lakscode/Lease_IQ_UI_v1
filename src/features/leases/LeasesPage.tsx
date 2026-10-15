@@ -1,11 +1,10 @@
 // Leases: upload files, track processing (and drive it while the tab is open), browse leases.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
-import {
-  Alert, Button, Card, EmptyState, ErrorState, Field, Input, LeaseStatusBadge, Modal, PageHeader, Select, SortHeader, Spinner, StatTile, sortRows,
-} from '../../components/ui.tsx';
+import { Alert, Button, Card, EmptyState, ErrorState, Field, Input, LeaseStatusBadge, Modal, PageHeader, Select, SortHeader, Spinner, StatTile } from '../../components/ui.tsx';
+import { sortRows } from '../../components/ui-utils.ts';
 import { useT } from '../../i18n/index.tsx';
-import { useAuth } from '../../auth/AuthProvider.tsx';
+import { useAuth } from '../../auth/useAuth.ts';
 import { apiUrl, get, post } from '../../api/client.ts';
 import { useAsync } from '../../lib/useAsync.ts';
 import { daysUntil, formatDate, formatMoney } from '../../lib/format.ts';

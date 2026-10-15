@@ -3,16 +3,14 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { get, patch, post, del } from '../../api/client.ts';
-import { useAuth } from '../../auth/AuthProvider.tsx';
-import {
-  Button, Card, EmptyState, ErrorState, Field, Input, Modal, PageHeader, Select, Spinner, Textarea, useConfirm, useToast,
-} from '../../components/ui.tsx';
+import { useAuth } from '../../auth/useAuth.ts';
+import { Button, Card, EmptyState, ErrorState, Field, Input, Modal, PageHeader, Select, Spinner, Textarea } from '../../components/ui.tsx';
+import { useConfirm, useToast } from '../../components/feedback.ts';
 import { useT } from '../../i18n/index.tsx';
 import { formatDateTime, formatTokens } from '../../lib/format.ts';
 import { useAsync } from '../../lib/useAsync.ts';
-import {
-  AiNotConfigured, PageLink, errorText, isAiNotConfigured, leaseLabel, type LeaseDocumentOption, type LeaseOption,
-} from './shared.tsx';
+import { AiNotConfigured, PageLink, type LeaseDocumentOption, type LeaseOption } from './shared.tsx';
+import { errorText, isAiNotConfigured, leaseLabel } from './helpers.ts';
 
 interface Conversation {
   id: string;

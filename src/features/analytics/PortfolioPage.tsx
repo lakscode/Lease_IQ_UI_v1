@@ -4,16 +4,17 @@ import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { get, getBlob, saveBlob } from '../../api/client.ts';
-import { useAuth } from '../../auth/AuthProvider.tsx';
-import {
-  Badge, Button, Card, EmptyState, ErrorState, LeaseStatusBadge, PageHeader, Select, SortHeader, Spinner, StatTile, Tabs, sortRows, useToast,
-} from '../../components/ui.tsx';
+import { useAuth } from '../../auth/useAuth.ts';
+import { Badge, Button, Card, EmptyState, ErrorState, LeaseStatusBadge, PageHeader, Select, SortHeader, Spinner, StatTile, Tabs } from '../../components/ui.tsx';
+import { sortRows } from '../../components/ui-utils.ts';
+import { useToast } from '../../components/feedback.ts';
 import { useT, type TFunction } from '../../i18n/index.tsx';
 import { formatDate, formatMoney, formatNumber, formatPercent } from '../../lib/format.ts';
 import { useAsync } from '../../lib/useAsync.ts';
 import MarketRentEngine from '../intelligence/MarketRentEngine.tsx';
 import SaveToCloudMenu from '../cloud/SaveToCloudMenu.tsx';
-import { AXIS_TICK, BAR_RADIUS, ChartCard, ChartTip, GRID_STROKE, HBAR_RADIUS, MAX_BAR, Meter, compact } from './charts.tsx';
+import { ChartCard, ChartTip, Meter } from './charts.tsx';
+import { AXIS_TICK, BAR_RADIUS, GRID_STROKE, HBAR_RADIUS, MAX_BAR, compact } from './chart-style.ts';
 import type { ExpiringData, PortfolioData, RentRollRow, RiskReason } from './types.ts';
 import './analytics.css';
 

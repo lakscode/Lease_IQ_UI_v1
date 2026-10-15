@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { ApiError, get, post } from '../../api/client.ts';
-import { useAuth } from '../../auth/AuthProvider.tsx';
+import { useAuth } from '../../auth/useAuth.ts';
 import { Alert, Button, Spinner } from '../../components/ui.tsx';
 import { useT } from '../../i18n/index.tsx';
 import { formatDateTime } from '../../lib/format.ts';

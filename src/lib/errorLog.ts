@@ -12,9 +12,50 @@ export interface ErrorReport {
   details?: Record<string, unknown>;
 }
 
+// At most this many reports per page load, and identical reports are sent once per 30 s (avoids error storms).
+const MAX_REPORTS = 30;
+let sent = 0;
+const recent = new Map<string, number>();
+
 export function reportError(report: ErrorReport): void {
-  console.error(`[${report.area}]`, report.code ?? '', report.message, report.details ?? '');
+  const log = report.level === 'warning' ? console.warn : console.error;
+  log(`[${report.area}]`, report.code ?? '', report.message, report.details ?? '');
+  const key = `${report.area}|${report.code ?? ''}|${report.message}`;
+  const now = Date.now();
+  if (sent >= MAX_REPORTS || now - (recent.get(key) ?? 0) < 30_000) return;
+  recent.set(key, now);
+  sent += 1;
   void send(report);
+}
+
+let globalInstalled = false;
+
+/** Report uncaught errors and unhandled promise rejections (call once at startup). */
+export function installGlobalErrorReporting(): void {
+  if (globalInstalled) return;
+  globalInstalled = true;
+  window.addEventListener('error', (e) => {
+    if (!e.error && !e.message) return; // resource load errors carry no message
+    const err = e.error as Error | undefined;
+    reportError({
+      area: 'ui.unhandled',
+      message: err?.message || e.message,
+      code: err?.name ?? null,
+      details: { source: e.filename, line: e.lineno, col: e.colno, stack: err?.stack?.split('\n').slice(0, 6).join('\n') },
+    });
+  });
+  window.addEventListener('unhandledrejection', (e) => {
+    const err = e.reason as Error & { status?: number; code?: string };
+    if (err?.name === 'AbortError') return;
+    // API errors are reported by the API client already.
+    if (err?.name === 'ApiError') return;
+    reportError({
+      area: 'ui.unhandled_rejection',
+      message: err?.message || String(e.reason),
+      code: err?.code ?? err?.name ?? null,
+      details: { stack: err?.stack?.split('\n').slice(0, 6).join('\n') },
+    });
+  });
 }
 
 async function send(report: ErrorReport) {

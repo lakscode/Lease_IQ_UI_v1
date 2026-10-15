@@ -2,8 +2,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { post } from '../../api/client.ts';
-import { useAuth } from '../../auth/AuthProvider.tsx';
-import { Alert, Button, Field, Input, Modal, Select, Textarea, useToast } from '../../components/ui.tsx';
+import { useAuth } from '../../auth/useAuth.ts';
+import { Alert, Button, Field, Input, Modal, Select, Textarea } from '../../components/ui.tsx';
+import { useToast } from '../../components/feedback.ts';
 import { useT } from '../../i18n/index.tsx';
 import './account.css';
 

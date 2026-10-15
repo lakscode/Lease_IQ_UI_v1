@@ -1,16 +1,13 @@
 // Shared UI building blocks. Styling lives in styles.css (class names below).
+// Only components are exported here (React Fast Refresh): helpers are in ui-utils.ts, hooks in feedback.ts.
 import {
-  createContext, useCallback, useContext, useEffect, useId, useRef, useState,
+  useCallback, useEffect, useId, useRef, useState,
   type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes,
 } from 'react';
 import { useT } from '../i18n/index.tsx';
 import type { LeaseStatus } from '../api/types.ts';
-
-type Tone = 'neutral' | 'primary' | 'success' | 'warning' | 'danger' | 'info';
-
-export function cx(...classes: (string | false | null | undefined)[]): string {
-  return classes.filter(Boolean).join(' ');
-}
+import { cx, type Tone } from './ui-utils.ts';
+import { ConfirmContext, ToastContext, type ConfirmOptions } from './feedback.ts';
 
 // ---- Buttons ---------------------------------------------------------------------------------
 
@@ -204,8 +201,6 @@ export function Modal({ open, title, onClose, children, footer, wide }: {
 }
 
 /** Promise-based confirm dialog: `const confirm = useConfirm(); if (await confirm({...})) ...` */
-interface ConfirmOptions { title: ReactNode; message?: ReactNode; confirmLabel?: string; danger?: boolean }
-const ConfirmContext = createContext<((o: ConfirmOptions) => Promise<boolean>) | null>(null);
 
 export function ConfirmProvider({ children }: { children: ReactNode }) {
   const t = useT();
@@ -237,16 +232,9 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useConfirm() {
-  const ctx = useContext(ConfirmContext);
-  if (!ctx) throw new Error('useConfirm must be used inside <ConfirmProvider>');
-  return ctx;
-}
-
 // ---- Toasts ----------------------------------------------------------------------------------
 
 interface Toast { id: number; tone: Tone; message: ReactNode }
-const ToastContext = createContext<((message: ReactNode, tone?: Tone) => void) | null>(null);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -267,12 +255,6 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useToast() {
-  const ctx = useContext(ToastContext);
-  if (!ctx) throw new Error('useToast must be used inside <ToastProvider>');
-  return ctx;
-}
-
 // ---- Misc ------------------------------------------------------------------------------------
 
 /** Clickable column header for sortable tables. */
@@ -288,17 +270,4 @@ export function SortHeader<K extends string>({ label, column, sort, onSort, alig
       </button>
     </th>
   );
-}
-
-export function sortRows<T>(rows: T[], key: keyof T, dir: 'asc' | 'desc'): T[] {
-  const factor = dir === 'asc' ? 1 : -1;
-  return [...rows].sort((a, b) => {
-    const va = a[key];
-    const vb = b[key];
-    if (va === vb) return 0;
-    if (va === null || va === undefined) return 1;
-    if (vb === null || vb === undefined) return -1;
-    if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * factor;
-    return String(va).localeCompare(String(vb), undefined, { numeric: true }) * factor;
-  });
 }

@@ -5,7 +5,8 @@
 // After saving, the file opens in a new tab and a dialog shows its link (Copy / Open) — the dialog also covers
 // browsers that block the automatic tab because the upload took too long after the click.
 import { useEffect, useRef, useState } from 'react';
-import { Button, Input, Modal, useToast } from '../../components/ui.tsx';
+import { Button, Input, Modal } from '../../components/ui.tsx';
+import { useToast } from '../../components/feedback.ts';
 import { useT } from '../../i18n/index.tsx';
 import { googleConfigured, microsoftConfigured } from '../../lib/config.ts';
 import { GraphBrowser } from './GraphBrowser.tsx';

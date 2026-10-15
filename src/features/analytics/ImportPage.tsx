@@ -3,10 +3,9 @@
 import { useCallback, useRef, useState, type DragEvent } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { del, get, patch, post } from '../../api/client.ts';
-import { useAuth } from '../../auth/AuthProvider.tsx';
-import {
-  Alert, Badge, Button, Card, EmptyState, ErrorState, Field, PageHeader, Select, Spinner, useConfirm, useToast,
-} from '../../components/ui.tsx';
+import { useAuth } from '../../auth/useAuth.ts';
+import { Alert, Badge, Button, Card, EmptyState, ErrorState, Field, PageHeader, Select, Spinner } from '../../components/ui.tsx';
+import { useConfirm, useToast } from '../../components/feedback.ts';
 import { useT } from '../../i18n/index.tsx';
 import { formatDate, formatDateTime, formatMoney, formatNumber, formatPercent } from '../../lib/format.ts';
 import { useAsync } from '../../lib/useAsync.ts';

@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import { del, get, patch, post } from '../../api/client.ts';
 import type { Role } from '../../api/types.ts';
-import { Alert, Button, Card, EmptyState, ErrorState, Field, Input, Modal, Select, Spinner, useConfirm, useToast } from '../../components/ui.tsx';
+import { Alert, Button, Card, EmptyState, ErrorState, Field, Input, Modal, Select, Spinner } from '../../components/ui.tsx';
+import { useConfirm, useToast } from '../../components/feedback.ts';
 import { useT } from '../../i18n/index.tsx';
 import { useAsync } from '../../lib/useAsync.ts';
 import { ROLES, type AdminDomain, type AdminOrg } from './types.ts';

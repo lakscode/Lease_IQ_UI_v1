@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { get, getBlob, saveBlob } from '../../api/client.ts';
-import { useAuth } from '../../auth/AuthProvider.tsx';
+import { useAuth } from '../../auth/useAuth.ts';
 import { Button, Card, EmptyState, ErrorState, Field, Input, Select, Spinner, StatTile } from '../../components/ui.tsx';
 import { useT } from '../../i18n/index.tsx';
 import { formatDate, formatNumber, formatTokens, todayIso } from '../../lib/format.ts';

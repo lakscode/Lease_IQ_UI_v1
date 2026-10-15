@@ -2,9 +2,11 @@
 // with inline editing for editors and the change history.
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { Button, Card, Input, Spinner, Textarea, cx, useToast } from '../../../components/ui.tsx';
+import { Button, Card, Input, Spinner, Textarea } from '../../../components/ui.tsx';
+import { cx } from '../../../components/ui-utils.ts';
+import { useToast } from '../../../components/feedback.ts';
 import { useT } from '../../../i18n/index.tsx';
-import { useAuth } from '../../../auth/AuthProvider.tsx';
+import { useAuth } from '../../../auth/useAuth.ts';
 import { get, patch } from '../../../api/client.ts';
 import { useAsync } from '../../../lib/useAsync.ts';
 import { formatDate, formatDateTime } from '../../../lib/format.ts';

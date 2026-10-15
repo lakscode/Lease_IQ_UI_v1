@@ -4,12 +4,13 @@ import { Link, useNavigate } from 'react-router';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { get } from '../../api/client.ts';
 import type { LeaseStatus } from '../../api/types.ts';
-import { useAuth } from '../../auth/AuthProvider.tsx';
+import { useAuth } from '../../auth/useAuth.ts';
 import { Card, EmptyState, ErrorState, PageHeader, Spinner, StatTile } from '../../components/ui.tsx';
 import { useT, type TFunction } from '../../i18n/index.tsx';
 import { formatDate, formatMoney, formatNumber, todayIso } from '../../lib/format.ts';
 import { useAsync } from '../../lib/useAsync.ts';
-import { AXIS_TICK, BAR_RADIUS, ChartCard, ChartTip, GRID_STROKE, HBAR_RADIUS, MAX_BAR, Segmented, compact } from './charts.tsx';
+import { ChartCard, ChartTip, Segmented } from './charts.tsx';
+import { AXIS_TICK, BAR_RADIUS, GRID_STROKE, HBAR_RADIUS, MAX_BAR, compact } from './chart-style.ts';
 import type { DashboardData } from './types.ts';
 import './analytics.css';
 

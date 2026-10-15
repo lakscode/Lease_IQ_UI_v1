@@ -1,15 +1,15 @@
 // Supporting documents for one lease: upload (signed URL), list, edit, download, delete and AI review.
 import { useEffect, useRef, useState } from 'react';
 import { get, patch, post, del } from '../../api/client.ts';
-import { useAuth } from '../../auth/AuthProvider.tsx';
-import {
-  Badge, Button, Card, EmptyState, ErrorState, Field, Input, Modal, Select, Spinner, Textarea, useConfirm, useToast,
-} from '../../components/ui.tsx';
+import { useAuth } from '../../auth/useAuth.ts';
+import { Badge, Button, Card, EmptyState, ErrorState, Field, Input, Modal, Select, Spinner, Textarea } from '../../components/ui.tsx';
+import { useConfirm, useToast } from '../../components/feedback.ts';
 import { useT } from '../../i18n/index.tsx';
 import { formatBytes, formatDate, formatDateTime, formatMoney } from '../../lib/format.ts';
 import { supabase } from '../../lib/supabase.ts';
 import { useAsync } from '../../lib/useAsync.ts';
-import { AiNotConfigured, JobStatusBadge, SeverityBadge, errorText, isAiNotConfigured } from './shared.tsx';
+import { AiNotConfigured, JobStatusBadge, SeverityBadge } from './shared.tsx';
+import { errorText, isAiNotConfigured } from './helpers.ts';
 
 const CATEGORIES = ['exhibit', 'insurance', 'estoppel', 'snda', 'financial_statement', 'correspondence', 'notice', 'invoice', 'other'] as const;
 const EXTENSIONS = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'docx', 'doc', 'xlsx', 'xls', 'csv', 'txt', 'md', 'eml', 'msg'];

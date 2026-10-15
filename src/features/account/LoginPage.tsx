@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router';
 import { supabase } from '../../lib/supabase.ts';
 import { config } from '../../lib/config.ts';
-import { useAuth } from '../../auth/AuthProvider.tsx';
+import { useAuth } from '../../auth/useAuth.ts';
 import { Alert, Button, Field, Input } from '../../components/ui.tsx';
 import { useT } from '../../i18n/index.tsx';
 import { AuthShell } from './AuthShell.tsx';

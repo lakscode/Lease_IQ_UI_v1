@@ -134,13 +134,19 @@ export interface AdminOrg {
   clause_model: string | null;
 }
 
-export type ClauseClassifier = 'claude' | 'svm' | 'gateway';
+export type ClauseClassifier = 'claude' | 'svm' | 'gateway' | 'langchain' | 'llama';
 
 export interface ClauseClassifierInfo {
   classifiers: ClauseClassifier[];
   claude: { configured: boolean; model: string };
   svm: { configured: boolean; trained_at: string; clause_types: number };
+  /** Vercel AI Gateway health, shared by gateway / langchain / llama (ready = has credits to serve requests). */
+  gateway_status: { configured: boolean; ready: boolean; balance: string | null; error: string | null };
   gateway: { configured: boolean; models: { id: string; name: string }[] };
+  /** LangChain chain with any Vercel AI Gateway model. */
+  langchain: { configured: boolean; default_model: string; models: { id: string; name: string }[] };
+  /** Meta Llama via the Vercel AI SDK; models = the gateway's meta/llama* models. */
+  llama: { configured: boolean; default_model: string; models: { id: string; name: string }[] };
 }
 
 export interface AdminDomain {
