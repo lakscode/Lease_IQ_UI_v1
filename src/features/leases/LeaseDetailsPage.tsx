@@ -25,7 +25,7 @@ import type { LeaseDetail } from './types.ts';
 import { useAuth } from '../../auth/AuthProvider.tsx';
 import './leases.css';
 
-const TABS = ['abstract', 'alerts', 'clauses', 'documents', 'signatures', 'record', 'system', 'opportunities', 'rentAudit', 'cam', 'attachments', 'activity'] as const;
+const TABS = ['abstract', 'alerts', 'rentAudit', 'cam', 'opportunities', 'clauses', 'documents', 'signatures', 'record', 'system', 'attachments', 'activity'] as const;
 type TabKey = (typeof TABS)[number];
 
 function ReportActions({ leaseId, tenant }: { leaseId: string; tenant: string | null }) {
@@ -56,9 +56,8 @@ function ReportActions({ leaseId, tenant }: { leaseId: string; tenant: string | 
       <Button onClick={download} loading={downloading}>{t('leases.report.download')}</Button>
       <SaveToCloudMenu
         getFile={fetchReport}
-        onSaved={(destination, name) => {
-          post(`/leases/${leaseId}/report/saved`, { destination, name }).catch(() => undefined);
-          toast(t('leases.report.saved'), 'success');
+        onSaved={(destination, name, url) => {
+          post(`/leases/${leaseId}/report/saved`, { destination, name, url }).catch(() => undefined);
         }}
       />
       <Button onClick={() => setEmailOpen(true)}>{t('leases.report.email')}</Button>

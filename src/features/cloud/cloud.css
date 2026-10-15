@@ -19,3 +19,7 @@
 @media (max-width: 600px) {
   .cl-menu { left: auto; right: 0; }
 }
+
+/* Saved-file dialog */
+.cl-link-row { display: flex; gap: 8px; align-items: center; }
+.cl-link-row .input { font-family: ui-monospace, Consolas, monospace; font-size: 0.8rem; }

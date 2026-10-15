@@ -126,12 +126,16 @@ export interface LeaseDetail {
   notice_by: string | null;
 }
 
+export type ClauseSource = 'claude' | 'svm';
+
 export interface ClauseItem {
   id: string;
   document_id: string;
   document_title: string | null;
   doc_type: DocType | null;
   clause_type: string;
+  /** Classifier that produced the clause: Claude AI or the local SVM model. */
+  source: ClauseSource;
   confidence: number | null;
   alt_types: { type: string; confidence: number }[] | null;
   section: string | null;
