@@ -156,7 +156,7 @@ export default function LeaseDetailsPage() {
       <div className="lw-tab-body">
         {tab === 'abstract' && <AbstractTab detail={data} docId={docId} onDocChange={(id) => navigate({ doc: id })} onChanged={refresh} version={version} />}
         {tab === 'alerts' && <Card title={t('leases.tab.alerts')}><AlertList alerts={alerts} /></Card>}
-        {tab === 'clauses' && <ClausesTab leaseId={lease.id} />}
+        {tab === 'clauses' && <ClausesTab leaseId={lease.id} onChanged={() => setVersion((v) => v + 1)} />}
         {tab === 'opportunities' && <OpportunitiesTab leaseId={lease.id} />}
         {tab === 'rentAudit' && <RentAuditTab leaseId={lease.id} />}
         {tab === 'cam' && <CamTab leaseId={lease.id} />}

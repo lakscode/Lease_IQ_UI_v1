@@ -1,9 +1,12 @@
-// Clauses of the lease family grouped by type, with source (Claude AI / SVM / Vercel AI), confidence, alternatives and location.
+// Clauses of the lease family grouped by type, with source (Claude AI / SVM / Vercel AI / LangChain / Llama), confidence,
+// alternatives and location. Editors can change a clause's type, mark it verified, or remove it (history: Activity tab).
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
-import { Badge, Card, EmptyState, ErrorState, Input, Select, Spinner } from '../../../components/ui.tsx';
+import { Badge, Button, Card, EmptyState, ErrorState, Input, Select, Spinner } from '../../../components/ui.tsx';
+import { useConfirm, useToast } from '../../../components/feedback.ts';
+import { useAuth } from '../../../auth/useAuth.ts';
 import { useT } from '../../../i18n/index.tsx';
-import { get } from '../../../api/client.ts';
+import { get, patch } from '../../../api/client.ts';
 import { useAsync } from '../../../lib/useAsync.ts';
 import { formatPercent } from '../../../lib/format.ts';
 import type { ClauseItem, ClauseSource } from '../types.ts';
@@ -27,14 +30,76 @@ function SourceBadge({ source, model }: { source: ClauseSource; model: string | 
   );
 }
 
-export default function ClausesTab({ leaseId }: { leaseId: string }) {
+/** Sources whose predictions use the lease_clauses.json taxonomy (others use the standard CLAUSE_TYPES). */
+const LEASE_TAXONOMY = new Set<ClauseSource>(['svm', 'langchain', 'llama']);
+interface Taxonomies { lease: string[]; standard: string[] }
+
+function ClauseEditor({ clause, taxonomies, onSave, onCancel }: {
+  clause: ClauseItem; taxonomies: Taxonomies | null; onSave: (type: string) => Promise<void>; onCancel: () => void;
+}) {
   const t = useT();
+  const [type, setType] = useState(clause.clause_type);
+  const [busy, setBusy] = useState(false);
+  const leaseFirst = LEASE_TAXONOMY.has(clause.source ?? 'claude');
+  const groups = taxonomies
+    ? (leaseFirst
+      ? [['leases.clauses.typeLease', taxonomies.lease], ['leases.clauses.typeStandard', taxonomies.standard]]
+      : [['leases.clauses.typeStandard', taxonomies.standard], ['leases.clauses.typeLease', taxonomies.lease]]) as [string, string[]][]
+    : [];
+  const save = async () => {
+    setBusy(true);
+    try {
+      await onSave(type);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="row lw-clause-editor">
+      <Select value={type} onChange={(e) => setType(e.target.value)} aria-label={t('leases.clauses.newType')} disabled={!taxonomies}>
+        {!groups.some(([, list]) => list.includes(clause.clause_type)) && <option value={clause.clause_type}>{clause.clause_type}</option>}
+        {groups.map(([label, list]) => (
+          <optgroup key={label} label={t(label)}>
+            {list.map((name) => <option key={name} value={name}>{name}</option>)}
+          </optgroup>
+        ))}
+      </Select>
+      <Button size="sm" variant="primary" onClick={save} loading={busy} disabled={type === clause.clause_type}>{t('common.save')}</Button>
+      <Button size="sm" variant="ghost" onClick={onCancel}>{t('common.cancel')}</Button>
+    </div>
+  );
+}
+
+export default function ClausesTab({ leaseId, onChanged }: { leaseId: string; onChanged?: () => void }) {
+  const t = useT();
+  const toast = useToast();
+  const confirm = useConfirm();
+  const { canEdit } = useAuth();
   const [filter, setFilter] = useState('');
   const [source, setSource] = useState<'all' | ClauseSource>('all');
+  const [showRemoved, setShowRemoved] = useState(false);
+  const [editing, setEditing] = useState<string | null>(null);
   const { data, error, loading, reload } = useAsync(
-    (signal) => get<{ clause_type: string; clauses: ClauseItem[] }[]>(`/leases/${leaseId}/clauses`, undefined, signal),
-    [leaseId],
+    (signal) => get<{ clause_type: string; clauses: ClauseItem[] }[]>(`/leases/${leaseId}/clauses`, showRemoved ? { include_dismissed: 1 } : undefined, signal),
+    [leaseId, showRemoved],
   );
+  const taxonomies = useAsync((signal) => (canEdit ? get<Taxonomies>('/clauses/taxonomies', undefined, signal) : Promise.resolve(null)), [canEdit]);
+
+  const update = async (c: ClauseItem, body: { clause_type?: string; verified?: boolean; dismissed?: boolean }) => {
+    try {
+      await patch(`/leases/${leaseId}/clauses/${c.id}`, body);
+      toast(t('leases.clauses.saved'));
+      setEditing(null);
+      reload();
+      onChanged?.();
+    } catch (err) {
+      toast((err as Error).message, 'danger');
+    }
+  };
+  const remove = async (c: ClauseItem) => {
+    if (!(await confirm({ title: t('leases.clauses.removeTitle'), message: t('leases.clauses.removeBody'), confirmLabel: t('leases.clauses.remove'), danger: true }))) return;
+    await update(c, { dismissed: true });
+  };
   const groups = useMemo(() => {
     const q = filter.trim().toLowerCase();
     return (data ?? [])
@@ -69,6 +134,9 @@ export default function ClausesTab({ leaseId }: { leaseId: string }) {
             ))}
           </Select>
           <Input type="search" placeholder={t('leases.clauses.filter')} value={filter} onChange={(e) => setFilter(e.target.value)} aria-label={t('leases.clauses.filter')} />
+          <label className="checkbox small">
+            <input type="checkbox" checked={showRemoved} onChange={(e) => setShowRemoved(e.target.checked)} />{t('leases.clauses.showRemoved')}
+          </label>
         </div>
       </div>
       <nav className="lw-clause-index" aria-label={t('leases.clauses.types')}>
@@ -80,10 +148,15 @@ export default function ClausesTab({ leaseId }: { leaseId: string }) {
         <Card key={g.clause_type} title={<span id={`clause-${encodeURIComponent(g.clause_type)}`}>{g.clause_type} <span className="muted small">({g.clauses.length})</span></span>}>
           <ul className="lw-clauses">
             {g.clauses.map((c) => (
-              <li key={c.id}>
+              <li key={c.id} className={c.dismissed ? 'lw-clause-removed' : undefined}>
                 <div className="row lw-clause-meta">
                   <SourceBadge source={c.source ?? 'claude'} model={c.model ?? null} />
                   <ConfidenceBadge value={c.confidence} />
+                  {c.original_clause_type && (
+                    <Badge tone="warning" title={t('leases.clauses.editedHint', { type: c.original_clause_type })}>{t('leases.clauses.edited')}</Badge>
+                  )}
+                  {c.verified && <Badge tone="success">✓ {t('leases.clauses.verified')}</Badge>}
+                  {c.dismissed && <Badge tone="danger">{t('leases.clauses.removed')}</Badge>}
                   <span className="small">{c.document_title || t(`leases.docType.${c.doc_type ?? 'other'}`)}</span>
                   {c.section && <span className="muted small">§ {c.section}</span>}
                   {c.page != null && (
@@ -98,6 +171,23 @@ export default function ClausesTab({ leaseId }: { leaseId: string }) {
                     {t('leases.clauses.alternatives')}: {c.alt_types.map((a) => `${a.type} (${formatPercent(a.confidence)})`).join(', ')}
                   </div>
                 )}
+                {canEdit && (editing === c.id ? (
+                  <ClauseEditor clause={c} taxonomies={taxonomies.data ?? null} onSave={(type) => update(c, { clause_type: type })} onCancel={() => setEditing(null)} />
+                ) : (
+                  <div className="row lw-clause-actions">
+                    {c.dismissed ? (
+                      <Button size="sm" variant="ghost" onClick={() => update(c, { dismissed: false })}>{t('leases.clauses.restore')}</Button>
+                    ) : (
+                      <>
+                        <Button size="sm" variant="ghost" onClick={() => setEditing(c.id)}>{t('leases.clauses.changeType')}</Button>
+                        <Button size="sm" variant="ghost" onClick={() => update(c, { verified: !c.verified })}>
+                          {c.verified ? t('leases.clauses.unverify') : t('leases.clauses.verify')}
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => remove(c)}>{t('leases.clauses.remove')}</Button>
+                      </>
+                    )}
+                  </div>
+                ))}
               </li>
             ))}
           </ul>

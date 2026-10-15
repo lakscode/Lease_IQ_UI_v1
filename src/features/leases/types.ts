@@ -138,6 +138,12 @@ export interface ClauseItem {
   source: ClauseSource;
   /** Model that produced the clause (Claude model id, gateway / Llama model id, or SVM version). */
   model: string | null;
+  /** Predicted type when a user changed it (null when the type is the prediction). */
+  original_clause_type: string | null;
+  verified: boolean;
+  /** Removed by a user (hidden unless "show removed"). */
+  dismissed: boolean;
+  edited_at: string | null;
   confidence: number | null;
   alt_types: { type: string; confidence: number }[] | null;
   section: string | null;
@@ -179,9 +185,25 @@ export interface ProcessingLog {
   created_at: string;
 }
 
+/** One change to a predicted clause (clause_edits). */
+export interface ClauseEditEntry {
+  id: number;
+  document_id: string;
+  document_title: string | null;
+  doc_type: DocType | null;
+  clause_id: string | null;
+  clause_text: string | null;
+  action: 'type' | 'verify' | 'unverify' | 'dismiss' | 'restore';
+  old_value: string | null;
+  new_value: string | null;
+  edited_at: string;
+  edited_by: string | null;
+}
+
 export interface ActivityResponse {
   files: { id: string; file_name: string; status: FileStatus; error: string | null; steps: PipelineStep[]; page_count: number | null; is_scanned: boolean | null; created_at: string; processed_at: string | null; logs: ProcessingLog[] }[];
   edits: EditEntry[];
+  clause_edits: ClauseEditEntry[];
   usage: { file_id: string | null; file_name: string | null; process: string; model: string; calls: number; input_tokens: number; output_tokens: number; cache_tokens: number; duration_ms: number }[];
 }
 

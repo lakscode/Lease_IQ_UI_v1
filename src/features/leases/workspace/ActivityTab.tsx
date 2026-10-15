@@ -1,4 +1,4 @@
-// Activity: processing timeline per file, abstract edits and AI usage per file.
+// Activity: processing timeline per file, abstract edits, clause changes and AI usage per file.
 import { Badge, Card, ErrorState, Spinner } from '../../../components/ui.tsx';
 import { useT } from '../../../i18n/index.tsx';
 import { get } from '../../../api/client.ts';
@@ -84,6 +84,38 @@ export default function ActivityTab({ leaseId, version }: { leaseId: string; ver
 
       <Card title={t('leases.abstract.history')}>
         <EditHistory leaseId={leaseId} version={version} />
+      </Card>
+
+      <Card title={t('leases.activity.clauseEdits')} padded={false}>
+        {data.clause_edits.length === 0 ? (
+          <div className="card-body"><p className="muted">{t('leases.activity.noClauseEdits')}</p></div>
+        ) : (
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>{t('common.date')}</th><th>{t('leases.abstract.by')}</th><th>{t('leases.abstract.document')}</th>
+                  <th>{t('leases.activity.clause')}</th><th>{t('leases.activity.change')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.clause_edits.map((e) => (
+                  <tr key={e.id}>
+                    <td className="small acct-muted-cell">{formatDateTime(e.edited_at)}</td>
+                    <td className="small">{e.edited_by ?? '—'}</td>
+                    <td className="small">{e.document_title || t(`leases.docType.${e.doc_type ?? 'other'}`)}</td>
+                    <td className="small muted" title={e.clause_text ?? undefined}>{(e.clause_text ?? '').slice(0, 90)}{(e.clause_text?.length ?? 0) > 90 ? '…' : ''}</td>
+                    <td className="small lw-clause-change">
+                      {e.action === 'type'
+                        ? t('leases.activity.changeType', { from: e.old_value ?? '—', to: e.new_value ?? '—' })
+                        : t(`leases.activity.change.${e.action}`)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
     </div>
   );
