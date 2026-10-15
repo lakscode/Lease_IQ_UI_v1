@@ -5,7 +5,8 @@ import { get } from '../../../api/client.ts';
 import { useAsync } from '../../../lib/useAsync.ts';
 import { formatDateTime, formatNumber, formatTokens } from '../../../lib/format.ts';
 import { FileStatusBadge } from '../shared.tsx';
-import { StepList, stepLabel } from '../FileCard.tsx';
+import { StepList } from '../FileCard.tsx';
+import { stepLabel } from '../labels.ts';
 import { EditHistory } from './AbstractTab.tsx';
 import type { ActivityResponse } from '../types.ts';
 

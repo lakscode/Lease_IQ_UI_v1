@@ -7,7 +7,8 @@ import { useAuth } from '../../auth/AuthProvider.tsx';
 import { del, get, post } from '../../api/client.ts';
 import { useAsync } from '../../lib/useAsync.ts';
 import { formatBytes, formatDateTime, formatTokens } from '../../lib/format.ts';
-import { DocTypeBadge, FileStatusBadge, errorText } from './shared.tsx';
+import { DocTypeBadge, FileStatusBadge } from './shared.tsx';
+import { errorText, stepLabel } from './labels.ts';
 import type { LeaseFile, PipelineStep, ProcessingLog } from './types.ts';
 
 export async function openSignedUrl(load: () => Promise<{ url: string }>, onError: (msg: string) => void) {
@@ -41,13 +42,6 @@ export function StepList({ steps }: { steps: PipelineStep[] }) {
       ))}
     </ol>
   );
-}
-
-export function stepLabel(t: ReturnType<typeof useT>, name: string): string {
-  const [base, arg] = name.split(':');
-  if (base === 'ocr') return t('leases.step.ocr', { pages: arg ?? '' });
-  if (base === 'abstract') return t('leases.step.abstract', { n: Number(arg ?? 0) + 1 });
-  return t(`leases.step.${base}`);
 }
 
 export function ProcessingLogModal({ fileId, onClose }: { fileId: string; onClose: () => void }) {

@@ -1,4 +1,4 @@
-// Super admin organization management: create, rename, delete (only when empty), manage members.
+// Super admin organization management: create, rename, choose the clause classifier, delete (only when empty), manage members.
 import { useState } from 'react';
 import { del, get, patch, post } from '../../api/client.ts';
 import { useAuth } from '../../auth/AuthProvider.tsx';
@@ -7,10 +7,20 @@ import { useT } from '../../i18n/index.tsx';
 import { formatDate } from '../../lib/format.ts';
 import { useAsync } from '../../lib/useAsync.ts';
 import { MembersPanel } from './MembersPanel.tsx';
-import { CURRENCIES, type AdminOrg } from './types.ts';
+import { CURRENCIES, type AdminOrg, type ClauseClassifier, type ClauseClassifierInfo } from './types.ts';
 import './account.css';
 
 const hasData = (o: AdminOrg) => o.lease_count + o.file_count + o.document_count > 0;
+
+function ClassifierBadge({ org }: { org: AdminOrg }) {
+  const t = useT();
+  const kind = org.clause_classifier ?? 'svm';
+  return (
+    <Badge tone={kind === 'svm' ? 'info' : kind === 'gateway' ? 'primary' : 'neutral'} title={org.clause_model ?? undefined}>
+      {t(`account.orgs.classifier.${kind}`)}{kind === 'gateway' && org.clause_model ? ` · ${org.clause_model}` : ''}
+    </Badge>
+  );
+}
 
 export function AdminOrgsPanel() {
   const t = useT();
@@ -58,6 +68,7 @@ export function AdminOrgsPanel() {
                 <th>{t('account.org.currency')}</th>
                 <th className="num">{t('account.org.members')}</th>
                 <th className="num">{t('account.orgs.leases')}</th>
+                <th>{t('account.orgs.classifierLabel')}</th>
                 <th>{t('account.settings.tabDomains')}</th>
                 <th>{t('account.org.created')}</th>
                 <th className="num">{t('common.actions')}</th>
@@ -70,6 +81,7 @@ export function AdminOrgsPanel() {
                   <td>{o.currency}</td>
                   <td className="num">{o.member_count}</td>
                   <td className="num">{o.lease_count}</td>
+                  <td><ClassifierBadge org={o} /></td>
                   <td>{o.domains.length ? <div className="acct-chips">{o.domains.map((d) => <Badge key={d}>{d}</Badge>)}</div> : <span className="muted">—</span>}</td>
                   <td className="acct-muted-cell">{formatDate(o.created_at)}</td>
                   <td className="num">
@@ -101,6 +113,9 @@ function OrgModal({ org, onClose, onDone }: { org: AdminOrg | null; onClose: () 
   const [name, setName] = useState(org?.name ?? '');
   const [currency, setCurrency] = useState(org?.currency ?? 'USD');
   const [addMe, setAddMe] = useState(true);
+  const [classifier, setClassifier] = useState<ClauseClassifier>(org?.clause_classifier ?? 'svm');
+  const [model, setModel] = useState(org?.clause_model ?? '');
+  const info = useAsync((signal) => get<ClauseClassifierInfo>('/admin/clause-classifiers', undefined, signal));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -109,8 +124,9 @@ function OrgModal({ org, onClose, onDone }: { org: AdminOrg | null; onClose: () 
     setBusy(true);
     setError(null);
     try {
-      if (org) await patch(`/admin/orgs/${org.id}`, { name: name.trim(), currency });
-      else await post('/admin/orgs', { name: name.trim(), currency, add_me: addMe });
+      const clause = { clause_classifier: classifier, clause_model: classifier === 'gateway' ? model.trim() : null };
+      if (org) await patch(`/admin/orgs/${org.id}`, { name: name.trim(), currency, ...clause });
+      else await post('/admin/orgs', { name: name.trim(), currency, add_me: addMe, ...clause });
       toast(org ? t('account.orgs.saved') : t('account.orgs.created', { name: name.trim() }));
       onDone();
       onClose();
@@ -126,7 +142,7 @@ function OrgModal({ org, onClose, onDone }: { org: AdminOrg | null; onClose: () 
       open
       title={org ? t('account.orgs.editTitle') : t('account.orgs.create')}
       onClose={onClose}
-      footer={<><Button onClick={onClose}>{t('common.cancel')}</Button><Button variant="primary" type="submit" form="acct-org-form" loading={busy} disabled={!name.trim()}>{t('common.save')}</Button></>}
+      footer={<><Button onClick={onClose}>{t('common.cancel')}</Button><Button variant="primary" type="submit" form="acct-org-form" loading={busy} disabled={!name.trim() || (classifier === 'gateway' && !model.trim())}>{t('common.save')}</Button></>}
     >
       <form id="acct-org-form" className="form" onSubmit={submit}>
         <Field label={t('account.org.name')}><Input value={name} onChange={(e) => setName(e.target.value)} maxLength={120} required autoFocus /></Field>
@@ -135,11 +151,50 @@ function OrgModal({ org, onClose, onDone }: { org: AdminOrg | null; onClose: () 
             {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
           </Select>
         </Field>
+        <ClassifierFields info={info.data} classifier={classifier} model={model} onClassifier={setClassifier} onModel={setModel} />
         {!org && (
           <label className="checkbox"><input type="checkbox" className="acct-check" checked={addMe} onChange={(e) => setAddMe(e.target.checked)} />{t('account.orgs.addMe')}</label>
         )}
         {error && <Alert tone="danger">{error}</Alert>}
       </form>
     </Modal>
+  );
+}
+
+function ClassifierFields({ info, classifier, model, onClassifier, onModel }: {
+  info: ClauseClassifierInfo | null | undefined;
+  classifier: ClauseClassifier;
+  model: string;
+  onClassifier: (c: ClauseClassifier) => void;
+  onModel: (m: string) => void;
+}) {
+  const t = useT();
+  const configured = info ? info[classifier].configured : true;
+  const hint = classifier === 'claude'
+    ? t('account.orgs.classifierHint.claude', { model: info?.claude.model ?? '' })
+    : classifier === 'svm'
+      ? t('account.orgs.classifierHint.svm', { types: info?.svm.clause_types ?? '', date: info ? formatDate(info.svm.trained_at) : '' })
+      : t('account.orgs.classifierHint.gateway');
+  return (
+    <>
+      <Field label={t('account.orgs.classifierLabel')} hint={hint}>
+        <Select value={classifier} onChange={(e) => onClassifier(e.target.value as ClauseClassifier)}>
+          {(['claude', 'svm', 'gateway'] as const).map((c) => (
+            <option key={c} value={c}>
+              {t(`account.orgs.classifier.${c}`)}{info && !info[c].configured ? ` (${t('account.orgs.classifierNotConfigured')})` : ''}
+            </option>
+          ))}
+        </Select>
+      </Field>
+      {classifier === 'gateway' && (
+        <Field label={t('account.orgs.gatewayModel')} hint={info?.gateway.models.length ? undefined : t('account.orgs.gatewayModelHint')}>
+          <Input value={model} onChange={(e) => onModel(e.target.value)} list="acct-gateway-models" placeholder="openai/gpt-5" maxLength={120} required />
+          <datalist id="acct-gateway-models">
+            {(info?.gateway.models ?? []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+          </datalist>
+        </Field>
+      )}
+      {!configured && <Alert tone="warning">{t(`account.orgs.classifierMissingKey.${classifier}`)}</Alert>}
+    </>
   );
 }

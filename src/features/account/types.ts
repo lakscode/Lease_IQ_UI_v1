@@ -95,6 +95,8 @@ export interface AdminSettings {
   default_model: string;
   models: { id: string; label: string; note: string }[];
   ai_configured: boolean;
+  /** How much of each document Claude reads: economy (text + signature pages) or quality (whole PDF). */
+  ai_mode: 'economy' | 'quality';
   email: { provider: 'default' | 'sendgrid'; from_name: string; from_email: string };
   sendgrid_key_set: boolean;
   /** 'settings' = saved in Settings, 'environment' = SENDGRID_API_KEY on the server */
@@ -127,6 +129,18 @@ export interface AdminOrg {
   file_count: number;
   document_count: number;
   domains: string[];
+  /** Clause classifier chosen by super admins: Claude AI, local SVM, or a Vercel AI Gateway model (clause_model). */
+  clause_classifier: ClauseClassifier;
+  clause_model: string | null;
+}
+
+export type ClauseClassifier = 'claude' | 'svm' | 'gateway';
+
+export interface ClauseClassifierInfo {
+  classifiers: ClauseClassifier[];
+  claude: { configured: boolean; model: string };
+  svm: { configured: boolean; trained_at: string; clause_types: number };
+  gateway: { configured: boolean; models: { id: string; name: string }[] };
 }
 
 export interface AdminDomain {

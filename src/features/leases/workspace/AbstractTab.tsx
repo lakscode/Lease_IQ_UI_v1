@@ -8,7 +8,8 @@ import { useAuth } from '../../../auth/AuthProvider.tsx';
 import { get, patch } from '../../../api/client.ts';
 import { useAsync } from '../../../lib/useAsync.ts';
 import { formatDate, formatDateTime } from '../../../lib/format.ts';
-import { DocTypeBadge, documentName, errorText, fieldLabel, formatFieldValue, SignatureBadge } from '../shared.tsx';
+import { DocTypeBadge, SignatureBadge } from '../shared.tsx';
+import { documentName, errorText, fieldLabel, formatFieldValue } from '../labels.ts';
 import { ABSTRACT_FIELDS, FIELD_GROUPS, type EditEntry, type LeaseDetail, type LeaseDocument } from '../types.ts';
 
 function FieldRow({ doc, fieldKey, leaseId, onSaved }: { doc: LeaseDocument; fieldKey: string; leaseId: string; onSaved: () => void }) {

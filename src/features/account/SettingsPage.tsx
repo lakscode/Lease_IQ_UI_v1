@@ -55,7 +55,7 @@ export default function SettingsPage() {
       />
       {(tab === 'ai' || tab === 'email') &&
         (settings.loading && !settings.data ? <Spinner /> : settings.error ? <ErrorState error={settings.error} onRetry={settings.reload} /> : settings.data && (
-          tab === 'ai' ? <AiModelCard settings={settings.data} onSaved={settings.reload} /> : <EmailCard settings={settings.data} onSaved={settings.reload} />
+          tab === 'ai' ? <div className="stack"><AiModelCard settings={settings.data} onSaved={settings.reload} /><AiModeCard settings={settings.data} onSaved={settings.reload} /></div> : <EmailCard settings={settings.data} onSaved={settings.reload} />
         ))}
       {tab === 'users' && <AdminUsersPanel />}
       {tab === 'orgs' && <AdminOrgsPanel />}
@@ -109,6 +109,53 @@ function AiModelCard({ settings, onSaved }: { settings: AdminSettings; onSaved: 
         {error && <Alert tone="danger">{error}</Alert>}
         <div className="form-actions">
           <Button variant="primary" onClick={save} loading={busy} disabled={model === settings.ai_model}>{t('common.save')}</Button>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function AiModeCard({ settings, onSaved }: { settings: AdminSettings; onSaved: () => void }) {
+  const t = useT();
+  const toast = useToast();
+  const [mode, setMode] = useState(settings.ai_mode ?? 'economy');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => setMode(settings.ai_mode ?? 'economy'), [settings.ai_mode]);
+
+  const save = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await put('/admin/settings/ai-mode', { mode });
+      toast(t('account.settings.aiModeSaved'));
+      onSaved();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card title={t('account.settings.aiMode')}>
+      <div className="form">
+        <p className="muted small">{t('account.settings.aiModeHint')}</p>
+        <div className="stack" role="radiogroup" aria-label={t('account.settings.aiMode')}>
+          {(['economy', 'quality'] as const).map((m) => (
+            <label key={m} className="acct-model-option">
+              <input type="radio" name="ai-mode" value={m} checked={mode === m} onChange={() => setMode(m)} />
+              <span>
+                <strong>{t(`account.settings.aiMode.${m}`)}</strong>{' '}
+                {m === 'economy' && <Badge tone="info">{t('account.settings.default')}</Badge>}
+                <span className="cell-sub">{t(`account.settings.aiModeNote.${m}`)}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+        {error && <Alert tone="danger">{error}</Alert>}
+        <div className="form-actions">
+          <Button variant="primary" onClick={save} loading={busy} disabled={mode === (settings.ai_mode ?? 'economy')}>{t('common.save')}</Button>
         </div>
       </div>
     </Card>

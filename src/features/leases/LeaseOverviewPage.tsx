@@ -7,7 +7,8 @@ import { useAuth } from '../../auth/AuthProvider.tsx';
 import { get } from '../../api/client.ts';
 import { useAsync } from '../../lib/useAsync.ts';
 import { daysUntil, formatDate, formatMoney, formatNumber } from '../../lib/format.ts';
-import { AlertList, DocTypeBadge, documentName, fieldLabel, formatFieldValue, SignatureBadge } from './shared.tsx';
+import { AlertList, DocTypeBadge, SignatureBadge } from './shared.tsx';
+import { documentName, fieldLabel, formatFieldValue } from './labels.ts';
 import { ABSTRACT_FIELDS, type LeaseDetail } from './types.ts';
 import './leases.css';
 

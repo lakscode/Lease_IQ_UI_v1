@@ -126,7 +126,7 @@ export interface LeaseDetail {
   notice_by: string | null;
 }
 
-export type ClauseSource = 'claude' | 'svm';
+export type ClauseSource = 'claude' | 'svm' | 'gateway';
 
 export interface ClauseItem {
   id: string;
@@ -134,8 +134,10 @@ export interface ClauseItem {
   document_title: string | null;
   doc_type: DocType | null;
   clause_type: string;
-  /** Classifier that produced the clause: Claude AI or the local SVM model. */
+  /** Classifier that produced the clause: Claude AI, the local SVM model, or a Vercel AI Gateway model. */
   source: ClauseSource;
+  /** Model that produced the clause (Claude model id, gateway model id, or SVM version). */
+  model: string | null;
   confidence: number | null;
   alt_types: { type: string; confidence: number }[] | null;
   section: string | null;

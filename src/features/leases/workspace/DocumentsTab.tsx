@@ -5,7 +5,8 @@ import { useT } from '../../../i18n/index.tsx';
 import { get } from '../../../api/client.ts';
 import { useAsync } from '../../../lib/useAsync.ts';
 import { formatDate } from '../../../lib/format.ts';
-import { DocTypeBadge, documentName } from '../shared.tsx';
+import { DocTypeBadge } from '../shared.tsx';
+import { documentName } from '../labels.ts';
 import { openSignedUrl } from '../FileCard.tsx';
 import type { LeaseDetail } from '../types.ts';
 

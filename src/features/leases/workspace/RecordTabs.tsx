@@ -7,7 +7,8 @@ import { useAuth } from '../../../auth/AuthProvider.tsx';
 import { get, post } from '../../../api/client.ts';
 import { useAsync } from '../../../lib/useAsync.ts';
 import { formatDate, formatDateTime } from '../../../lib/format.ts';
-import { DocTypeBadge, documentName, errorText, SignatureBadge } from '../shared.tsx';
+import { DocTypeBadge, SignatureBadge } from '../shared.tsx';
+import { documentName, errorText } from '../labels.ts';
 import type { AccessEntry, LeaseDetail } from '../types.ts';
 
 export function SignaturesTab({ detail, onChanged }: { detail: LeaseDetail; onChanged: () => void }) {
