@@ -1,5 +1,6 @@
 // Lease workspace: abstract, alerts, clauses, documents (incl. supporting documents), signatures, record,
-// system record, opportunities, rent audit, CAM and activity. Deep links: ?tab=&doc=&page=
+// system record, opportunities, rent audit, CAM and activity. Deep links: ?tab=&doc=&page= (and &att= for a
+// supporting document)
 import { useCallback, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
 import { Button, Card, ErrorState, LeaseStatusBadge, PageHeader, Spinner, Tabs } from '../../components/ui.tsx';
@@ -14,7 +15,6 @@ import SystemRecordTab from '../analytics/SystemRecordTab.tsx';
 import OpportunitiesTab from '../intelligence/OpportunitiesTab.tsx';
 import RentAuditTab from '../intelligence/RentAuditTab.tsx';
 import CamTab from '../intelligence/CamTab.tsx';
-import AttachmentsTab from '../intelligence/AttachmentsTab.tsx';
 import AbstractTab from './workspace/AbstractTab.tsx';
 import ClausesTab from './workspace/ClausesTab.tsx';
 import DocumentsTab from './workspace/DocumentsTab.tsx';
@@ -91,6 +91,7 @@ export default function LeaseDetailsPage() {
   const tabParam = (rawTab === 'attachments' ? 'documents' : rawTab) as TabKey | null;
   const tab: TabKey = tabParam && (TABS as readonly string[]).includes(tabParam) ? tabParam : 'abstract';
   const docId = params.get('doc');
+  const attId = params.get('att');
   const pageParam = Number(params.get('page'));
   const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : null;
   const [version, setVersion] = useState(0);
@@ -102,11 +103,12 @@ export default function LeaseDetailsPage() {
     setVersion((v) => v + 1);
   };
 
-  const navigate = (next: { tab?: TabKey; doc?: string | null; page?: number | null }) => {
+  const navigate = (next: { tab?: TabKey; doc?: string | null; att?: string | null; page?: number | null }) => {
     const p = new URLSearchParams(params);
     const set = (k: string, v: string | null | undefined) => (v ? p.set(k, v) : p.delete(k));
     if (next.tab !== undefined) set('tab', next.tab === 'abstract' ? null : next.tab);
     if (next.doc !== undefined) set('doc', next.doc);
+    if (next.att !== undefined) set('att', next.att);
     if (next.page !== undefined) set('page', next.page ? String(next.page) : null);
     setParams(p, { replace: next.tab === undefined });
   };
@@ -163,10 +165,14 @@ export default function LeaseDetailsPage() {
         {tab === 'rentAudit' && <RentAuditTab leaseId={lease.id} />}
         {tab === 'cam' && <CamTab leaseId={lease.id} />}
         {tab === 'documents' && (
-          <div className="stack">
-            <DocumentsTab detail={data} docId={docId} page={page} onSelect={(id, pg) => navigate({ doc: id, page: pg ?? null })} />
-            <AttachmentsTab leaseId={lease.id} />
-          </div>
+          <DocumentsTab
+            detail={data}
+            docId={docId}
+            attId={attId}
+            page={page}
+            onSelect={(id, pg) => navigate({ doc: id, att: null, page: pg ?? null })}
+            onSelectAttachment={(id) => navigate({ att: id, page: null })}
+          />
         )}
         {tab === 'signatures' && <SignaturesTab detail={data} onChanged={refresh} />}
         {tab === 'record' && <RecordTab detail={data} />}
