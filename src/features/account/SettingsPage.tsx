@@ -10,11 +10,12 @@ import { AdminDomainsPanel } from './AdminDomainsPanel.tsx';
 import { AdminErrorLogPanel } from './AdminErrorLogPanel.tsx';
 import { AdminOrgsPanel } from './AdminOrgsPanel.tsx';
 import { AdminUsersPanel } from './AdminUsersPanel.tsx';
+import { PredictionCatalogPanel } from './PredictionCatalogPanel.tsx';
 import { UsageReport } from './UsageReport.tsx';
 import type { AdminSettings } from './types.ts';
 import './account.css';
 
-type Tab = 'ai' | 'email' | 'users' | 'orgs' | 'domains' | 'usage' | 'errors' | 'maintenance';
+type Tab = 'ai' | 'catalog' | 'email' | 'users' | 'orgs' | 'domains' | 'usage' | 'errors' | 'maintenance';
 
 const TAB_KEY = 'leaseiq.settingsTab';
 
@@ -43,6 +44,7 @@ export default function SettingsPage() {
       <Tabs<Tab>
         items={[
           { key: 'ai', label: t('account.settings.tabAi') },
+          { key: 'catalog', label: t('account.settings.tabCatalog') },
           { key: 'email', label: t('account.settings.tabEmail') },
           { key: 'users', label: t('account.settings.tabUsers') },
           { key: 'orgs', label: t('account.settings.tabOrgs') },
@@ -60,6 +62,7 @@ export default function SettingsPage() {
         ))}
       {tab === 'users' && <AdminUsersPanel />}
       {tab === 'orgs' && <AdminOrgsPanel />}
+      {tab === 'catalog' && <PredictionCatalogPanel />}
       {tab === 'domains' && <AdminDomainsPanel />}
       {tab === 'usage' && <UsageReport scope="all" />}
       {tab === 'errors' && <AdminErrorLogPanel />}

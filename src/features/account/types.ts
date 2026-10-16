@@ -136,6 +136,17 @@ export interface AdminOrg {
 
 export type ClauseClassifier = 'claude' | 'svm' | 'gateway' | 'langchain' | 'llama';
 
+/** GET /admin/prediction-catalog: what the predictions use. */
+export interface PredictionCatalog {
+  fields: { key: string; label: string; kind: 'text' | 'longtext' | 'date' | 'number' | 'money'; group: string; lease_column: string | null }[];
+  /** lease_clauses.json (SVM, LangChain, Llama). examples = SVM training rows (0 = no training data); svm_f1 = cross-validated F1. */
+  lease_clauses: { id: string; name: string; examples: number; svm_f1: number | null }[];
+  /** CLAUSE_TYPES (Claude, Vercel AI Gateway). */
+  standard_clauses: string[];
+  svm: { trained_at: string; clause_types: number; accuracy: number | null; macro_f1: number | null; cv_examples: number | null };
+  orgs: { id: string; name: string; classifier: ClauseClassifier; model: string | null }[];
+}
+
 export interface ClauseClassifierInfo {
   classifiers: ClauseClassifier[];
   claude: { configured: boolean; model: string };

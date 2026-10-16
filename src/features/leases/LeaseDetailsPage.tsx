@@ -1,5 +1,5 @@
-// Lease workspace: abstract, alerts, clauses, documents, signatures, record, system record, opportunities,
-// rent audit, CAM, supporting documents and activity. Deep links: ?tab=&doc=&page=
+// Lease workspace: abstract, alerts, clauses, documents (incl. supporting documents), signatures, record,
+// system record, opportunities, rent audit, CAM and activity. Deep links: ?tab=&doc=&page=
 import { useCallback, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
 import { Button, Card, ErrorState, LeaseStatusBadge, PageHeader, Spinner, Tabs } from '../../components/ui.tsx';
@@ -27,7 +27,8 @@ import type { LeaseDetail } from './types.ts';
 import { useAuth } from '../../auth/useAuth.ts';
 import './leases.css';
 
-const TABS = ['abstract', 'alerts', 'rentAudit', 'cam', 'opportunities', 'clauses', 'documents', 'signatures', 'record', 'system', 'attachments', 'activity'] as const;
+// Supporting documents (attachments) live inside the Documents tab; ?tab=attachments still resolves there.
+const TABS = ['abstract', 'alerts', 'rentAudit', 'cam', 'opportunities', 'clauses', 'documents', 'signatures', 'record', 'system', 'activity'] as const;
 type TabKey = (typeof TABS)[number];
 
 function ReportActions({ leaseId, tenant }: { leaseId: string; tenant: string | null }) {
@@ -86,7 +87,8 @@ export default function LeaseDetailsPage() {
   const { leaseId = '' } = useParams();
   const { canEdit } = useAuth();
   const [params, setParams] = useSearchParams();
-  const tabParam = params.get('tab') as TabKey | null;
+  const rawTab = params.get('tab');
+  const tabParam = (rawTab === 'attachments' ? 'documents' : rawTab) as TabKey | null;
   const tab: TabKey = tabParam && (TABS as readonly string[]).includes(tabParam) ? tabParam : 'abstract';
   const docId = params.get('doc');
   const pageParam = Number(params.get('page'));
@@ -160,8 +162,12 @@ export default function LeaseDetailsPage() {
         {tab === 'opportunities' && <OpportunitiesTab leaseId={lease.id} />}
         {tab === 'rentAudit' && <RentAuditTab leaseId={lease.id} />}
         {tab === 'cam' && <CamTab leaseId={lease.id} />}
-        {tab === 'attachments' && <AttachmentsTab leaseId={lease.id} />}
-        {tab === 'documents' && <DocumentsTab detail={data} docId={docId} page={page} onSelect={(id, pg) => navigate({ doc: id, page: pg ?? null })} />}
+        {tab === 'documents' && (
+          <div className="stack">
+            <DocumentsTab detail={data} docId={docId} page={page} onSelect={(id, pg) => navigate({ doc: id, page: pg ?? null })} />
+            <AttachmentsTab leaseId={lease.id} />
+          </div>
+        )}
         {tab === 'signatures' && <SignaturesTab detail={data} onChanged={refresh} />}
         {tab === 'record' && <RecordTab detail={data} />}
         {tab === 'system' && <SystemRecordTab leaseId={lease.id} />}

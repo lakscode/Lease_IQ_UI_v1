@@ -23,6 +23,7 @@ export default function DocumentsTab({ detail, docId, page, onSelect }: {
   const doc = detail.documents.find((d) => d.id === docId) ?? detail.documents[0];
   const leaseId = detail.lease.id;
   const [url, setUrl] = useState<string | null>(null);
+  const [urlAt, setUrlAt] = useState(0);
   const [urlError, setUrlError] = useState<string | null>(null);
   const [view, setView] = useState<'pdf' | 'text'>(doc?.has_pdf ? 'pdf' : 'text');
 
@@ -33,7 +34,11 @@ export default function DocumentsTab({ detail, docId, page, onSelect }: {
     if (!doc?.has_pdf) return;
     let cancelled = false;
     get<{ url: string }>(`/leases/${leaseId}/documents/${doc.id}/pdf`)
-      .then((r) => !cancelled && setUrl(r.url))
+      .then((r) => {
+        if (cancelled) return;
+        setUrl(r.url);
+        setUrlAt(Date.now());
+      })
       .catch((err: Error) => !cancelled && setUrlError(err.message));
     return () => {
       cancelled = true;
@@ -82,7 +87,21 @@ export default function DocumentsTab({ detail, docId, page, onSelect }: {
               </Select>
             )}
             {doc.has_pdf && (
-              <Button size="sm" onClick={() => openSignedUrl(() => get(`/leases/${leaseId}/documents/${doc.id}/pdf`), (m) => toast(m, 'danger'))}>{t('leases.docs.newTab')}</Button>
+              // A real link to the already-signed URL (opened synchronously, so popup blockers allow it). Falls back to
+              // signing a fresh URL when the iframe's URL isn't loaded yet or is close to its 15-minute expiry.
+              <a
+                className="btn btn-secondary btn-sm"
+                href={url ? `${url}#page=${current}` : '#'}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  if (url && Date.now() - urlAt < 10 * 60_000) return;
+                  e.preventDefault();
+                  openSignedUrl(() => get(`/leases/${leaseId}/documents/${doc.id}/pdf`), (m) => toast(m, 'danger'), current);
+                }}
+              >
+                {t('leases.docs.newTab')}
+              </a>
             )}
           </div>
         }
