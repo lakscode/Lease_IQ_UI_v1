@@ -1,14 +1,15 @@
 // One uploaded file on the Leases page: status, documents found, badges, token use and actions.
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { Alert, Badge, Button, Modal, Spinner, ErrorState } from '../../components/ui.tsx';
+import { Alert, Badge, Button, LeaseStatusBadge, Modal, Spinner, ErrorState } from '../../components/ui.tsx';
 import { useConfirm, useToast } from '../../components/feedback.ts';
 import { useT } from '../../i18n/index.tsx';
 import { useAuth } from '../../auth/useAuth.ts';
 import { del, get, post } from '../../api/client.ts';
 import { useAsync } from '../../lib/useAsync.ts';
-import { formatBytes, formatDateTime, formatTokens } from '../../lib/format.ts';
-import { DocTypeBadge, FileStatusBadge, LeaseExpiryBadge } from './shared.tsx';
+import { formatBytes, formatDate, formatDateTime, formatTokens } from '../../lib/format.ts';
+import type { LeaseStatus } from '../../api/types.ts';
+import { DocTypeBadge, FileStatusBadge } from './shared.tsx';
 import { errorText, stepLabel } from './labels.ts';
 import { openSignedUrl } from './open-signed-url.ts';
 import type { LeaseFile, PipelineStep, ProcessingLog } from './types.ts';
@@ -70,7 +71,12 @@ export function ProcessingLogModal({ fileId, onClose }: { fileId: string; onClos
   );
 }
 
-export default function FileCard({ file, onChanged }: { file: LeaseFile; onChanged: () => void }) {
+export default function FileCard({ file, onChanged, leaseInfo }: {
+  file: LeaseFile;
+  onChanged: () => void;
+  /** Lease id → status and expiration date, used when the API's document summary doesn't carry them. */
+  leaseInfo?: Map<string, { status: LeaseStatus; expiration_date: string | null }>;
+}) {
   const t = useT();
   const toast = useToast();
   const confirm = useConfirm();
@@ -153,6 +159,9 @@ export default function FileCard({ file, onChanged }: { file: LeaseFile; onChang
             {file.documents.map((d) => {
               // Lead with the tenant (what users scan for); the full document title is in the link's tooltip.
               const title = d.title || t(`leases.docType.${d.doc_type}`);
+              const info = d.lease_id ? leaseInfo?.get(d.lease_id) : undefined;
+              const status = d.lease_status ?? info?.status;
+              const expires = d.expiration_date ?? info?.expiration_date;
               return (
                 <li key={d.id}>
                   <DocTypeBadge type={d.doc_type} />
@@ -161,7 +170,8 @@ export default function FileCard({ file, onChanged }: { file: LeaseFile; onChang
                   ) : (
                     <span className="lw-break">{d.tenant_name || title}</span>
                   )}
-                  <LeaseExpiryBadge date={d.expiration_date} />
+                  {status && <LeaseStatusBadge status={status} />}
+                  {expires && <span className="muted small" title={t('leases.files.expiryHint')}>{t('leases.files.expires', { date: formatDate(expires) })}</span>}
                   {d.page_start != null && <span className="muted small">{t('leases.files.pageRange', { from: d.page_start, to: d.page_end ?? d.page_start })}</span>}
                 </li>
               );

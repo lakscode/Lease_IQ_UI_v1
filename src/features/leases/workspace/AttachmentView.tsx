@@ -33,7 +33,11 @@ function MetaFields({ value, onChange, autoOption }: { value: AttachmentMeta; on
   );
 }
 
-export function UploadModal({ open, onClose, api, onUploaded }: { open: boolean; onClose: () => void; api: AttachmentsApi; onUploaded: (a: Attachment) => void }) {
+export function UploadModal({ open, onClose, api, onUploaded, initialCategory }: {
+  open: boolean; onClose: () => void; api: AttachmentsApi; onUploaded: (a: Attachment) => void;
+  /** Category to preselect (e.g. from the document checklist). */
+  initialCategory?: string;
+}) {
   const t = useT();
   const toast = useToast();
   const { config } = useAuth();
@@ -45,6 +49,10 @@ export function UploadModal({ open, onClose, api, onUploaded }: { open: boolean;
   const [error, setError] = useState<string | null>(null);
   const maxMb = config?.maxUploadMb ?? 50;
   const aiOn = config?.ai !== false;
+
+  useEffect(() => {
+    if (open) setMeta({ ...EMPTY_META, category: initialCategory ?? '' });
+  }, [open, initialCategory]);
 
   const close = () => {
     if (uploading) return;

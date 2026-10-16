@@ -5,18 +5,21 @@ import { Select } from '../../../components/ui.tsx';
 import { cx } from '../../../components/ui-utils.ts';
 import { useT } from '../../../i18n/index.tsx';
 import { useAuth } from '../../../auth/useAuth.ts';
-import { get } from '../../../api/client.ts';
-import { useAsync } from '../../../lib/useAsync.ts';
 import { fieldLabel, formatFieldValue } from '../labels.ts';
-import type { ClauseItem, LeaseDocument } from '../types.ts';
+import type { ClauseGroup, LeaseDocument } from '../types.ts';
 
 interface IndexItem { id: string; kind: 'term' | 'clause'; label: string; page: number; detail: string }
 
-export default function DocIndex({ leaseId, doc, page, onPage }: { leaseId: string; doc: LeaseDocument; page: number; onPage: (page: number) => void }) {
+export default function DocIndex({ doc, clauses, page, onPage }: {
+  doc: LeaseDocument;
+  /** The lease's clauses grouped by type (GET /leases/:id/clauses), loaded by the document view. */
+  clauses: ClauseGroup[] | null;
+  page: number;
+  onPage: (page: number) => void;
+}) {
   const t = useT();
   const { currency } = useAuth();
   const [openId, setOpenId] = useState<string | null>(null);
-  const clauses = useAsync((signal) => get<{ clause_type: string; clauses: ClauseItem[] }[]>(`/leases/${leaseId}/clauses`, undefined, signal), [leaseId]);
 
   const items = useMemo<IndexItem[]>(() => {
     const out: IndexItem[] = [];
@@ -25,14 +28,14 @@ export default function DocIndex({ leaseId, doc, page, onPage }: { leaseId: stri
       if (typeof p !== 'number' || value === null || value === undefined || value === '') continue;
       out.push({ id: `term:${key}`, kind: 'term', label: fieldLabel(t, key), page: p, detail: formatFieldValue(key, value, currency) });
     }
-    for (const group of clauses.data ?? []) {
+    for (const group of clauses ?? []) {
       for (const c of group.clauses) {
         if (c.document_id !== doc.id || !c.page || c.dismissed) continue;
         out.push({ id: `clause:${c.id}`, kind: 'clause', label: c.clause_type, page: c.page, detail: c.text ?? '' });
       }
     }
     return out.sort((a, b) => a.page - b.page || a.kind.localeCompare(b.kind) || a.label.localeCompare(b.label));
-  }, [doc, clauses.data, t, currency]);
+  }, [doc, clauses, t, currency]);
 
   if (!items.length) return null;
   const here = items.filter((i) => i.page === page);

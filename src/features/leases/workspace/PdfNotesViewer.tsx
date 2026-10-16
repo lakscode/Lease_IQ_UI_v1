@@ -3,7 +3,11 @@
 // The notes panel lists every note of the document; clicking one jumps to its page and highlight.
 import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
-import { Alert, Button, Spinner, Textarea } from '../../../components/ui.tsx';
+import { Link } from 'react-router';
+import { Alert, Button, Input, Select, Spinner, Textarea } from '../../../components/ui.tsx';
+import { get, post } from '../../../api/client.ts';
+import { useAsync } from '../../../lib/useAsync.ts';
+import type { ClauseGroup, ClauseItem } from '../types.ts';
 import { cx } from '../../../components/ui-utils.ts';
 import { useConfirm, useToast } from '../../../components/feedback.ts';
 import { useT } from '../../../i18n/index.tsx';
@@ -15,7 +19,8 @@ import { NOTE_COLORS, selectionOnPage, useDocNotes, type DocNote, type NoteColor
 
 const ZOOMS = [0.5, 0.75, 1, 1.25, 1.5, 2, 3];
 
-interface Draft { page: number; quote: string | null; rects: NoteRect[] }
+/** A note (on a selection or the whole page) or a clause (selection only) being written. */
+interface Draft { page: number; quote: string | null; rects: NoteRect[]; kind?: 'note' | 'clause' }
 interface Pending extends Draft { anchor: { x: number; y: number } }
 
 const COMPOSER_WIDTH = 300;
@@ -90,19 +95,60 @@ function NoteEditor({ initial, color: initialColor, onSave, onCancel, autoFocus 
   );
 }
 
-export default function PdfNotesViewer({ leaseId, docId, url, title, page, onPage }: {
+interface Taxonomies { lease: string[]; standard: string[] }
+
+/** Tag the selected text as a clause: pick a type (both taxonomies, as in the Clauses tab) and an optional section. */
+function ClauseEditor({ onSave, onCancel }: { onSave: (type: string, section: string) => Promise<void>; onCancel: () => void }) {
+  const t = useT();
+  const taxonomies = useAsync((signal) => get<Taxonomies>('/clauses/taxonomies', undefined, signal), []);
+  const [type, setType] = useState('');
+  const [section, setSection] = useState('');
+  const [saving, setSaving] = useState(false);
+  const save = async () => {
+    if (!type) return;
+    setSaving(true);
+    try {
+      await onSave(type, section.trim());
+    } finally {
+      setSaving(false);
+    }
+  };
+  return (
+    <div className="lw-note-editor" onKeyDown={(e) => e.key === 'Escape' && onCancel()}>
+      <Select autoFocus value={type} onChange={(e) => setType(e.target.value)} aria-label={t('leases.clauses.newType')} disabled={!taxonomies.data}>
+        <option value="">{taxonomies.data ? t('leases.userClause.chooseType') : t('common.loading')}</option>
+        {taxonomies.data && ([['leases.clauses.typeStandard', taxonomies.data.standard], ['leases.clauses.typeLease', taxonomies.data.lease]] as [string, string[]][]).map(([label, list]) => (
+          <optgroup key={label} label={t(label)}>
+            {list.map((name) => <option key={name} value={name}>{name}</option>)}
+          </optgroup>
+        ))}
+      </Select>
+      <Input value={section} maxLength={120} placeholder={t('leases.userClause.section')} aria-label={t('leases.userClause.section')} onChange={(e) => setSection(e.target.value)} />
+      <div className="row" style={{ gap: 6, justifyContent: 'flex-end' }}>
+        <Button size="sm" variant="ghost" onClick={onCancel} disabled={saving}>{t('common.cancel')}</Button>
+        <Button size="sm" variant="primary" loading={saving} disabled={!type} onClick={() => void save()}>{t('leases.userClause.save')}</Button>
+      </div>
+    </div>
+  );
+}
+
+export default function PdfNotesViewer({ leaseId, docId, url, title, page, onPage, clauses, onClausesChanged }: {
   leaseId: string;
   docId: string;
   url: string;
   title: string;
   page: number;
   onPage: (page: number) => void;
+  /** The lease's clauses (user-added ones on this document are highlighted). */
+  clauses?: ClauseGroup[] | null;
+  onClausesChanged?: () => void;
 }) {
   const t = useT();
   const toast = useToast();
   const confirm = useConfirm();
   const { canEdit, session, isOrgAdmin, isSuperAdmin } = useAuth();
   const notes = useDocNotes(leaseId, docId);
+  const [clauseInfo, setClauseInfo] = useState<ClauseItem | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const pageRef = useRef<HTMLDivElement>(null);
@@ -132,6 +178,10 @@ export default function PdfNotesViewer({ leaseId, docId, url, title, page, onPag
   const shown = filter === 'page' ? onThisPage : all;
   const userId = session?.user.id;
   const canChange = (n: DocNote) => canEdit && (n.created_by === userId || isOrgAdmin || isSuperAdmin);
+  const userClauses = useMemo(
+    () => (clauses ?? []).flatMap((g) => g.clauses).filter((c) => c.source === 'user' && c.document_id === docId && c.page === current && c.rects?.length),
+    [clauses, docId, current],
+  );
 
   // Load the document.
   useEffect(() => {
@@ -247,11 +297,14 @@ export default function PdfNotesViewer({ leaseId, docId, url, title, page, onPag
     const box = pageRef.current.getBoundingClientRect();
     const x = (e.clientX - box.left) / box.width;
     const y = (e.clientY - box.top) / box.height;
-    const hit = onThisPage.find((n) => n.rects.some((r) => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h));
+    const inside = (r: NoteRect) => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
+    const hit = onThisPage.find((n) => n.rects.some(inside));
     if (hit) {
       setActiveId(hit.id);
       setPanelOpen(true);
+      return;
     }
+    setClauseInfo(userClauses.find((c) => c.rects?.some(inside)) ?? null);
   };
 
   const startNote = (d: Draft) => {
@@ -259,6 +312,18 @@ export default function PdfNotesViewer({ leaseId, docId, url, title, page, onPag
     setPending(null);
     setEditingId(null);
     window.getSelection()?.removeAllRanges();
+  };
+
+  const saveClause = async (type: string, section: string) => {
+    if (!draft || !draft.quote) return;
+    try {
+      await post(`/leases/${leaseId}/documents/${docId}/clauses`, { clause_type: type, section: section || null, text: draft.quote, page: draft.page, rects: draft.rects });
+      setDraft(null);
+      toast(t('leases.userClause.added', { type }));
+      onClausesChanged?.();
+    } catch (err) {
+      toast(errorText(t, err), 'danger');
+    }
   };
 
   const saveDraft = async (body: string, color: NoteColor) => {
@@ -321,6 +386,7 @@ export default function PdfNotesViewer({ leaseId, docId, url, title, page, onPag
             style={pageSize ? { width: pageSize.w, height: pageSize.h } : { visibility: 'hidden' }}
             onMouseDown={() => {
               setPending(null);
+              setClauseInfo(null);
               textRef.current?.classList.add('selecting');
             }}
             onMouseUp={onMouseUp}
@@ -332,6 +398,13 @@ export default function PdfNotesViewer({ leaseId, docId, url, title, page, onPag
                 <div
                   key={`${n.id}-${i}`}
                   className={cx('lw-hl', `lw-note-${n.color}`, n.id === activeId && 'lw-hl-active')}
+                  style={{ left: `${r.x * 100}%`, top: `${r.y * 100}%`, width: `${r.w * 100}%`, height: `${r.h * 100}%` }}
+                />
+              )))}
+              {userClauses.flatMap((c) => (c.rects ?? []).map((r, i) => (
+                <div
+                  key={`clause-${c.id}-${i}`}
+                  className={cx('lw-hl lw-hl-clause', clauseInfo?.id === c.id && 'lw-hl-active')}
                   style={{ left: `${r.x * 100}%`, top: `${r.y * 100}%`, width: `${r.w * 100}%`, height: `${r.h * 100}%` }}
                 />
               )))}
@@ -351,7 +424,29 @@ export default function PdfNotesViewer({ leaseId, docId, url, title, page, onPag
             )}
             {pending && (
               <div className="lw-pv-pop" style={{ left: `${Math.min(pending.anchor.x * 100, 85)}%`, top: `${pending.anchor.y * 100}%` }} onMouseDown={(e) => e.stopPropagation()} onMouseUp={(e) => e.stopPropagation()}>
-                <Button size="sm" variant="primary" onClick={() => startNote(pending)}>✎ {t('leases.notes.add')}</Button>
+                <div className="row" style={{ gap: 4 }}>
+                  <Button size="sm" variant="primary" onClick={() => startNote({ ...pending, kind: 'note' })}>✎ {t('leases.notes.add')}</Button>
+                  <Button size="sm" variant="primary" onClick={() => startNote({ ...pending, kind: 'clause' })}>§ {t('leases.userClause.add')}</Button>
+                </div>
+              </div>
+            )}
+            {clauseInfo && clauseInfo.rects?.length && pageSize && (
+              <div
+                className="lw-pv-clauseinfo"
+                style={draftPosition({ page: current, quote: null, rects: clauseInfo.rects }, pageSize)}
+                onMouseDown={(e) => e.stopPropagation()}
+                onMouseUp={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="row-between">
+                  <strong>§ {clauseInfo.clause_type}</strong>
+                  <button type="button" className="lw-link" aria-label={t('common.close')} onClick={() => setClauseInfo(null)}>✕</button>
+                </div>
+                <span className="lw-note-meta">
+                  <span>👤 {t('leases.clauses.source.user')}{clauseInfo.created_by_name ? ` · ${clauseInfo.created_by_name}` : ''}</span>
+                  {clauseInfo.section && <span>§ {clauseInfo.section}</span>}
+                </span>
+                <Link className="small" to={`?tab=clauses#clause-${encodeURIComponent(clauseInfo.clause_type)}`}>{t('leases.userClause.openInClauses')}</Link>
               </div>
             )}
             {draft && draft.page === current && pageSize && (
@@ -363,9 +458,15 @@ export default function PdfNotesViewer({ leaseId, docId, url, title, page, onPag
                 onMouseUp={(e) => e.stopPropagation()}
                 onClick={(e) => e.stopPropagation()}
               >
-                <span className="lw-note-meta">{draft.rects.length ? t('leases.notes.newOn', { page: draft.page }) : t('leases.notes.pageNote', { page: draft.page })}</span>
+                <span className="lw-note-meta">
+                  {draft.kind === 'clause'
+                    ? t('leases.userClause.newOn', { page: draft.page })
+                    : draft.rects.length ? t('leases.notes.newOn', { page: draft.page }) : t('leases.notes.pageNote', { page: draft.page })}
+                </span>
                 {draft.quote && <blockquote className="lw-note-quote">{draft.quote}</blockquote>}
-                <NoteEditor key={`${draft.page}-${draft.quote}`} autoFocus onSave={saveDraft} onCancel={() => setDraft(null)} />
+                {draft.kind === 'clause'
+                  ? <ClauseEditor key={`${draft.page}-${draft.quote}`} onSave={saveClause} onCancel={() => setDraft(null)} />
+                  : <NoteEditor key={`${draft.page}-${draft.quote}`} autoFocus onSave={saveDraft} onCancel={() => setDraft(null)} />}
               </div>
             )}
           </div>

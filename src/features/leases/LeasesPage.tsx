@@ -88,6 +88,8 @@ export default function LeasesPage() {
   const files = useAsync((signal) => get<FilesResponse>('/files', { search, status }, signal), [search, status]);
   const leases = useAsync((signal) => get<LeaseListItem[]>('/leases', { search: leaseSearch, status: leaseStatus }, signal), [leaseSearch, leaseStatus]);
   const allLeases = useAsync((signal) => get<LeaseListItem[]>('/leases', undefined, signal), []);
+  // Lease status and end date for the file cards (older APIs don't include them in /files).
+  const leaseInfo = useMemo(() => new Map((allLeases.data ?? []).map((l) => [l.id, { status: l.status, expiration_date: l.expiration_date }])), [allLeases.data]);
   const health = useAsync(async (signal) => {
     try {
       const res = await fetch(apiUrl('/status'), { signal });
@@ -165,7 +167,7 @@ export default function LeasesPage() {
           </EmptyState>
         )}
         <div className="lw-file-list">
-          {files.data?.files.map((f) => <FileCard key={f.id} file={f} onChanged={() => { files.reload(); leases.reload(); }} />)}
+          {files.data?.files.map((f) => <FileCard key={f.id} file={f} leaseInfo={leaseInfo} onChanged={() => { files.reload(); leases.reload(); allLeases.reload(); }} />)}
         </div>
       </Card>
 

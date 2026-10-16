@@ -164,6 +164,13 @@ a.lw-chip:hover { border-color: var(--primary); }
 .lw-hl { position: absolute; border-radius: 2px; mix-blend-mode: multiply; opacity: 0.45; }
 .lw-hl-active { outline: 2px solid var(--primary); outline-offset: 1px; opacity: 0.7; }
 .lw-hl-draft { background: rgba(79, 70, 229, 0.25); outline: 1px dashed var(--primary); }
+/* Clauses a user marked: a violet underline-box, distinct from the filled note highlights */
+.lw-hl-clause { mix-blend-mode: normal; opacity: 1; background: rgba(124, 58, 237, 0.10); border-bottom: 2px solid #7c3aed; border-radius: 0; }
+.lw-pv-clauseinfo {
+  position: absolute; z-index: 5; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px;
+  border: 1px solid var(--border-strong); border-left: 4px solid #7c3aed; border-radius: 10px;
+  background: var(--surface); color: var(--text); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25); font-size: 0.86rem; cursor: default;
+}
 .lw-pv-pins { position: absolute; top: 8px; right: 8px; display: flex; flex-direction: column; gap: 4px; z-index: 3; }
 .lw-pv-pin { width: 26px; height: 26px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, 0.2); font-size: 0.8rem; cursor: pointer; color: #111; }
 .lw-pv-pop { position: absolute; z-index: 4; margin-top: 6px; transform: translateX(-50%); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2); border-radius: 8px; }
@@ -214,6 +221,38 @@ a.lw-chip:hover { border-color: var(--primary); }
 .lw-note-colors { display: inline-flex; gap: 6px; }
 .lw-note-swatch { width: 18px; height: 18px; padding: 0; border-radius: 50%; border: 2px solid transparent; cursor: pointer; }
 .lw-note-swatch-on { border-color: var(--text); box-shadow: 0 0 0 2px var(--surface) inset; }
+
+/* Document checklist (top of the Documents sidebar) */
+.lw-check { border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); }
+.lw-check-head {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; border: none; background: none;
+  color: var(--text); font: inherit; font-size: 0.84rem; font-weight: 650; text-align: left; cursor: pointer;
+}
+.lw-check-progress { margin-left: auto; padding: 1px 8px; border-radius: 999px; background: var(--warning-soft, rgba(234, 179, 8, 0.18)); font-size: 0.74rem; font-weight: 600; }
+.lw-check-complete { background: var(--success-soft, rgba(34, 197, 94, 0.18)); }
+.lw-check-caret { color: var(--muted); font-size: 0.8rem; }
+.lw-check-list { list-style: none; margin: 0; padding: 0 10px 8px; display: flex; flex-direction: column; gap: 2px; }
+.lw-check-list li { display: flex; align-items: center; gap: 8px; min-height: 30px; font-size: 0.84rem; }
+.lw-check-label { flex: 1; min-width: 0; }
+.lw-check-icon { flex: none; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; font-size: 0.7rem; font-weight: 700; }
+.lw-check-ok .lw-check-icon { background: var(--success, #16a34a); color: #fff; }
+.lw-check-expired .lw-check-icon { background: var(--danger); color: #fff; }
+.lw-check-missing .lw-check-icon { border: 1.5px dashed var(--border-strong); color: transparent; }
+.lw-check-missing .lw-check-label { color: var(--muted); }
+.lw-check-state { font-size: 0.74rem; color: var(--muted); }
+.lw-check-expired .lw-check-state { color: var(--danger); }
+
+/* Amendment vs. earlier documents ("Changes" view) */
+.lw-changes { display: flex; flex-direction: column; gap: 12px; }
+.lw-changes .lw-doc-summary { margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.lw-changes-table td { vertical-align: top; }
+.lw-changes-table th:first-child { width: 200px; }
+.lw-change-term { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.lw-change-cell { display: flex; flex-direction: column; gap: 4px; white-space: pre-wrap; word-break: break-word; }
+.lw-change-old { text-decoration: line-through; text-decoration-color: var(--danger); color: var(--muted); }
+.lw-change-new { font-weight: 600; }
+.lw-change-same td { color: var(--muted); }
+.lw-change-later { color: var(--muted); }
 
 /* "In this document" index above the PDF */
 .lw-docindex { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }

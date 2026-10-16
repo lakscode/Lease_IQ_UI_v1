@@ -14,19 +14,40 @@ import { formatDate } from '../../../lib/format.ts';
 import { DocTypeBadge } from '../shared.tsx';
 import { documentName } from '../labels.ts';
 import { openSignedUrl } from '../open-signed-url.ts';
-import type { LeaseDetail, LeaseDocument } from '../types.ts';
+import type { ClauseGroup, LeaseDetail, LeaseDocument } from '../types.ts';
 import { fileLabel, useAttachments, type Attachment } from './attachments.ts';
 import { AttachmentView, ExpiryBadge, UploadModal } from './AttachmentView.tsx';
 import DocIndex from './DocIndex.tsx';
+import DocChanges from './DocChanges.tsx';
+import DocChecklist from './DocChecklist.tsx';
 import PdfNotesViewer from './PdfNotesViewer.tsx';
 
-function LeaseDocView({ leaseId, doc, page, onPage }: { leaseId: string; doc: LeaseDocument; page: number | null; onPage: (page: number) => void }) {
+/** Amendments, addenda and commencement letters that follow an earlier document can be compared with it. */
+const canCompare = (detail: LeaseDetail, doc: LeaseDocument) =>
+  doc.doc_type !== 'main_lease' && doc.doc_type !== 'other' && detail.documents.indexOf(doc) > 0;
+
+function LeaseDocView({ detail, doc, page, onPage, onOpenDoc }: {
+  detail: LeaseDetail;
+  doc: LeaseDocument;
+  page: number | null;
+  onPage: (page: number) => void;
+  onOpenDoc: (docId: string, page: number | null) => void;
+}) {
   const t = useT();
   const toast = useToast();
+  const leaseId = detail.lease.id;
   const [url, setUrl] = useState<string | null>(null);
   const [urlAt, setUrlAt] = useState(0);
   const [urlError, setUrlError] = useState<string | null>(null);
-  const [view, setView] = useState<'pdf' | 'text'>(doc.has_pdf ? 'pdf' : 'text');
+  const [view, setView] = useState<'pdf' | 'text' | 'changes'>(doc.has_pdf ? 'pdf' : 'text');
+  const comparable = canCompare(detail, doc);
+
+  // From the Changes view: a link into this document switches back to the page view; others open that document.
+  const openFromChanges = (docId: string, pg: number | null) => {
+    if (docId !== doc.id) return onOpenDoc(docId, pg);
+    setView(doc.has_pdf ? 'pdf' : 'text');
+    if (pg) onPage(pg);
+  };
 
   useEffect(() => {
     setUrl(null);
@@ -50,6 +71,8 @@ function LeaseDocView({ leaseId, doc, page, onPage }: { leaseId: string; doc: Le
     (signal) => get<{ pages: { page_number: number; text: string }[] }>(`/leases/${leaseId}/documents/${doc.id}/pages`, undefined, signal),
     [doc.id, leaseId],
   );
+  // Shared by the "In this document" strip and the PDF viewer (user clauses are highlighted on the page).
+  const clauses = useAsync((signal) => get<ClauseGroup[]>(`/leases/${leaseId}/clauses`, undefined, signal), [leaseId]);
 
   const pageCount = pages.data?.pages.length ?? doc.page_count ?? 0;
   const current = Math.min(Math.max(1, page ?? 1), Math.max(1, pageCount));
@@ -64,8 +87,11 @@ function LeaseDocView({ leaseId, doc, page, onPage }: { leaseId: string; doc: Le
           <div className="lw-seg" role="group">
             <button type="button" className={cx(view === 'pdf' && 'lw-seg-active')} onClick={() => setView('pdf')} disabled={!doc.has_pdf}>{t('leases.docs.pdf')}</button>
             <button type="button" className={cx(view === 'text' && 'lw-seg-active')} onClick={() => setView('text')}>{t('leases.docs.text')}</button>
+            {comparable && (
+              <button type="button" className={cx(view === 'changes' && 'lw-seg-active')} onClick={() => setView('changes')} title={t('leases.changes.hint')}>{t('leases.changes.view')}</button>
+            )}
           </div>
-          {pageCount > 0 && (
+          {pageCount > 0 && view !== 'changes' && (
             <div className="lw-pager">
               <Button size="sm" variant="ghost" disabled={current <= 1} onClick={() => onPage(current - 1)} aria-label={t('leases.docs.prev')}>‹</Button>
               <Select value={current} onChange={(e) => onPage(Number(e.target.value))} aria-label={t('leases.docs.page')}>
@@ -102,15 +128,32 @@ function LeaseDocView({ leaseId, doc, page, onPage }: { leaseId: string; doc: Le
         {doc.page_count ? <span>{t('leases.files.pages', { count: doc.page_count })}</span> : null}
         {doc.file_name && <span className="lw-doc-file" title={doc.file_name}>{doc.file_name}</span>}
       </div>
-      {doc.summary && <p className="lw-doc-summary">{doc.summary}</p>}
-      <DocIndex leaseId={leaseId} doc={doc} page={current} onPage={onPage} />
+      {view === 'changes' ? (
+        <DocChanges detail={detail} doc={doc} onOpen={openFromChanges} />
+      ) : (
+        <>
+          {doc.summary && <p className="lw-doc-summary">{doc.summary}</p>}
+          <DocIndex doc={doc} clauses={clauses.data} page={current} onPage={onPage} />
+        </>
+      )}
 
-      {!doc.has_pdf && <Alert tone="info">{t('leases.docs.noPdf')}</Alert>}
+      {!doc.has_pdf && view !== 'changes' && <Alert tone="info">{t('leases.docs.noPdf')}</Alert>}
       {view === 'pdf' && doc.has_pdf && (
         <>
           {urlError && <Alert tone="danger">{urlError}</Alert>}
           {!url && !urlError && <Spinner />}
-          {url && <PdfNotesViewer leaseId={leaseId} docId={doc.id} url={url} title={documentName(t, doc)} page={current} onPage={onPage} />}
+          {url && (
+            <PdfNotesViewer
+              leaseId={leaseId}
+              docId={doc.id}
+              url={url}
+              title={documentName(t, doc)}
+              page={current}
+              onPage={onPage}
+              clauses={clauses.data}
+              onClausesChanged={clauses.reload}
+            />
+          )}
         </>
       )}
       {view === 'text' && (
@@ -149,6 +192,11 @@ export default function DocumentsTab({ detail, docId, attId, page, onSelect, onS
   const atts = useAttachments(leaseId, aiOn);
   const [query, setQuery] = useState('');
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploadCategory, setUploadCategory] = useState('');
+  const upload = (category: string) => {
+    setUploadCategory(category);
+    setUploadOpen(true);
+  };
 
   const doc = detail.documents.find((d) => d.id === docId) ?? detail.documents[0];
   const att = attId ? atts.data?.find((a) => a.id === attId) : undefined;
@@ -160,6 +208,13 @@ export default function DocumentsTab({ detail, docId, attId, page, onSelect, onS
   return (
     <div className="lw-docs">
       <aside className="lw-docs-side">
+        <DocChecklist
+          detail={detail}
+          attachments={atts.data}
+          onUpload={canEdit ? upload : undefined}
+          onOpenDoc={(id) => onSelect(id, null)}
+          onOpenAttachment={onSelectAttachment}
+        />
         <Input type="search" placeholder={t('leases.docs.search')} value={query} onChange={(e) => setQuery(e.target.value)} aria-label={t('leases.docs.search')} />
 
         <section className="lw-docs-group">
@@ -187,7 +242,7 @@ export default function DocumentsTab({ detail, docId, attId, page, onSelect, onS
           <div className="lw-docs-group-head">
             <span>{t('intel.att.title')}</span>
             <span className="lw-docs-count">{atts.data?.length ?? '–'}</span>
-            {canEdit && <Button size="sm" variant="ghost" className="lw-docs-add" onClick={() => setUploadOpen(true)}>+ {t('leases.docs.add')}</Button>}
+            {canEdit && <Button size="sm" variant="ghost" className="lw-docs-add" onClick={() => upload('')}>+ {t('leases.docs.add')}</Button>}
           </div>
           {atts.loading && !atts.data && <Spinner />}
           {atts.error && <ErrorState error={atts.error} onRetry={atts.reload} />}
@@ -216,13 +271,13 @@ export default function DocumentsTab({ detail, docId, attId, page, onSelect, onS
             : atts.loading ? <Spinner />
               : <EmptyState icon="📎" title={t('leases.docs.notFound')} action={<Button onClick={() => onSelectAttachment(null)}>{t('leases.docs.backToLease')}</Button>} />
         ) : doc ? (
-          <LeaseDocView key={doc.id} leaseId={leaseId} doc={doc} page={page} onPage={(pg) => onSelect(doc.id, pg)} />
+          <LeaseDocView key={doc.id} detail={detail} doc={doc} page={page} onPage={(pg) => onSelect(doc.id, pg)} onOpenDoc={(id, pg) => onSelect(id, pg)} />
         ) : (
           <EmptyState icon="📄" title={t('leases.overview.noDocuments')} />
         )}
       </div>
 
-      <UploadModal open={uploadOpen} onClose={() => setUploadOpen(false)} api={atts} onUploaded={(a) => onSelectAttachment(a.id)} />
+      <UploadModal open={uploadOpen} initialCategory={uploadCategory} onClose={() => setUploadOpen(false)} api={atts} onUploaded={(a) => onSelectAttachment(a.id)} />
     </div>
   );
 }

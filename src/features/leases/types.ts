@@ -129,7 +129,8 @@ export interface LeaseDetail {
   notice_by: string | null;
 }
 
-export type ClauseSource = 'claude' | 'svm' | 'gateway' | 'langchain' | 'llama';
+/** 'user': marked by a user on the PDF (not a classifier; kept when the document is re-classified). */
+export type ClauseSource = 'claude' | 'svm' | 'gateway' | 'langchain' | 'llama' | 'user';
 
 export interface ClauseItem {
   id: string;
@@ -154,7 +155,13 @@ export interface ClauseItem {
   paragraph: number | null;
   line: number | null;
   text: string | null;
+  /** User clauses: highlight on the page (0..1 of the page), and who added it. */
+  rects?: { x: number; y: number; w: number; h: number }[] | null;
+  created_by_name?: string | null;
 }
+
+/** GET /leases/:id/clauses */
+export interface ClauseGroup { clause_type: string; clauses: ClauseItem[] }
 
 export interface EditEntry {
   id: number;
@@ -196,7 +203,7 @@ export interface ClauseEditEntry {
   doc_type: DocType | null;
   clause_id: string | null;
   clause_text: string | null;
-  action: 'type' | 'verify' | 'unverify' | 'dismiss' | 'restore';
+  action: 'type' | 'verify' | 'unverify' | 'dismiss' | 'restore' | 'add' | 'delete';
   old_value: string | null;
   new_value: string | null;
   edited_at: string;

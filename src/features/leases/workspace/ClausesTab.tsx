@@ -6,7 +6,7 @@ import { Badge, Button, Card, EmptyState, ErrorState, Input, Select, Spinner } f
 import { useConfirm, useToast } from '../../../components/feedback.ts';
 import { useAuth } from '../../../auth/useAuth.ts';
 import { useT } from '../../../i18n/index.tsx';
-import { get, patch } from '../../../api/client.ts';
+import { del, get, patch } from '../../../api/client.ts';
 import { useAsync } from '../../../lib/useAsync.ts';
 import { formatPercent } from '../../../lib/format.ts';
 import type { ClauseItem, ClauseSource } from '../types.ts';
@@ -17,15 +17,15 @@ function ConfidenceBadge({ value }: { value: number | null }) {
   return <Badge tone={tone}>{formatPercent(value)}</Badge>;
 }
 
-const SOURCES: ClauseSource[] = ['claude', 'svm', 'gateway', 'langchain', 'llama'];
-const SOURCE_TONE = { claude: 'neutral', svm: 'info', gateway: 'primary', langchain: 'warning', llama: 'success' } as const;
+const SOURCES: ClauseSource[] = ['claude', 'svm', 'gateway', 'langchain', 'llama', 'user'];
+const SOURCE_TONE = { claude: 'neutral', svm: 'info', gateway: 'primary', langchain: 'warning', llama: 'success', user: 'primary' } as const;
 const SHOWS_MODEL = new Set<ClauseSource>(['gateway', 'langchain', 'llama']);
 
 function SourceBadge({ source, model }: { source: ClauseSource; model: string | null }) {
   const t = useT();
   return (
     <Badge tone={SOURCE_TONE[source] ?? 'neutral'} title={t(`leases.clauses.sourceHint.${source}`, { model: model ?? '' }).replace(/\s*\(\)$/, '')}>
-      {t(`leases.clauses.source.${source}`)}{SHOWS_MODEL.has(source) && model ? ` · ${model}` : ''}
+      {source === 'user' ? '👤 ' : ''}{t(`leases.clauses.source.${source}`)}{(SHOWS_MODEL.has(source) || source === 'user') && model ? ` · ${model}` : ''}
     </Badge>
   );
 }
@@ -100,6 +100,18 @@ export default function ClausesTab({ leaseId, onChanged }: { leaseId: string; on
     if (!(await confirm({ title: t('leases.clauses.removeTitle'), message: t('leases.clauses.removeBody'), confirmLabel: t('leases.clauses.remove'), danger: true }))) return;
     await update(c, { dismissed: true });
   };
+  // Clauses a user added are deleted outright (predictions are only removed, so a re-run can't bring them back).
+  const deleteUserClause = async (c: ClauseItem) => {
+    if (!(await confirm({ title: t('leases.clauses.deleteUserTitle'), message: t('leases.clauses.deleteUserBody'), confirmLabel: t('common.delete'), danger: true }))) return;
+    try {
+      await del(`/leases/${leaseId}/clauses/${c.id}`);
+      toast(t('leases.clauses.saved'));
+      reload();
+      onChanged?.();
+    } catch (err) {
+      toast((err as Error).message, 'danger');
+    }
+  };
   const groups = useMemo(() => {
     const q = filter.trim().toLowerCase();
     return (data ?? [])
@@ -112,7 +124,7 @@ export default function ClausesTab({ leaseId, onChanged }: { leaseId: string; on
       .filter((g) => g.clauses.length > 0);
   }, [data, filter, source]);
   const sourceCounts = useMemo(() => {
-    const counts: Record<ClauseSource, number> = { claude: 0, svm: 0, gateway: 0, langchain: 0, llama: 0 };
+    const counts: Record<ClauseSource, number> = { claude: 0, svm: 0, gateway: 0, langchain: 0, llama: 0, user: 0 };
     for (const g of data ?? []) for (const c of g.clauses) counts[c.source ?? 'claude']++;
     return counts;
   }, [data]);
@@ -150,7 +162,7 @@ export default function ClausesTab({ leaseId, onChanged }: { leaseId: string; on
             {g.clauses.map((c) => (
               <li key={c.id} className={c.dismissed ? 'lw-clause-removed' : undefined}>
                 <div className="row lw-clause-meta">
-                  <SourceBadge source={c.source ?? 'claude'} model={c.model ?? null} />
+                  <SourceBadge source={c.source ?? 'claude'} model={c.source === 'user' ? c.created_by_name ?? null : c.model ?? null} />
                   <ConfidenceBadge value={c.confidence} />
                   {c.original_clause_type && (
                     <Badge tone="warning" title={t('leases.clauses.editedHint', { type: c.original_clause_type })}>{t('leases.clauses.edited')}</Badge>
@@ -183,7 +195,9 @@ export default function ClausesTab({ leaseId, onChanged }: { leaseId: string; on
                         <Button size="sm" variant="ghost" onClick={() => update(c, { verified: !c.verified })}>
                           {c.verified ? t('leases.clauses.unverify') : t('leases.clauses.verify')}
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => remove(c)}>{t('leases.clauses.remove')}</Button>
+                        {c.source === 'user'
+                          ? <Button size="sm" variant="ghost" onClick={() => deleteUserClause(c)}>{t('common.delete')}</Button>
+                          : <Button size="sm" variant="ghost" onClick={() => remove(c)}>{t('leases.clauses.remove')}</Button>}
                       </>
                     )}
                   </div>

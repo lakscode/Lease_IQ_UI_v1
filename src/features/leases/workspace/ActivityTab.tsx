@@ -108,7 +108,7 @@ export default function ActivityTab({ leaseId, version }: { leaseId: string; ver
                     <td className="small lw-clause-change">
                       {e.action === 'type'
                         ? t('leases.activity.changeType', { from: e.old_value ?? '—', to: e.new_value ?? '—' })
-                        : t(`leases.activity.change.${e.action}`)}
+                        : t(`leases.activity.change.${e.action}`, { from: e.old_value ?? '—', to: e.new_value ?? '—' })}
                     </td>
                   </tr>
                 ))}
