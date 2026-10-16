@@ -147,6 +147,106 @@ a.lw-chip:hover { border-color: var(--primary); }
 .lw-doc-summary { margin: 0 0 12px; padding: 10px 12px; border-left: 3px solid var(--primary); background: var(--surface-2); border-radius: 0 8px 8px 0; font-size: 0.88rem; line-height: 1.5; white-space: pre-wrap; }
 .lw-pdf { width: 100%; height: 75vh; min-height: 480px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); }
 
+/* PDF viewer with notes (pdf.js page + text layer + highlights) */
+/* Notes sit below the PDF so the page gets the full width. */
+.lw-pv { display: flex; flex-direction: column; gap: 12px; }
+.lw-pv-main { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.lw-pv-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.lw-pv-zoom { min-width: 48px; text-align: center; font-size: 0.82rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.lw-pv-hint { margin: 0; }
+.lw-pv-scroll {
+  height: 75vh; min-height: 480px; overflow: auto; padding: 12px;
+  border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2);
+}
+.lw-pv-page { position: relative; margin: 0 auto; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18); --scale-round-x: 1px; --scale-round-y: 1px; }
+.lw-pv-page canvas { display: block; }
+.lw-pv-highlights { position: absolute; inset: 0; pointer-events: none; }
+.lw-hl { position: absolute; border-radius: 2px; mix-blend-mode: multiply; opacity: 0.45; }
+.lw-hl-active { outline: 2px solid var(--primary); outline-offset: 1px; opacity: 0.7; }
+.lw-hl-draft { background: rgba(79, 70, 229, 0.25); outline: 1px dashed var(--primary); }
+.lw-pv-pins { position: absolute; top: 8px; right: 8px; display: flex; flex-direction: column; gap: 4px; z-index: 3; }
+.lw-pv-pin { width: 26px; height: 26px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, 0.2); font-size: 0.8rem; cursor: pointer; color: #111; }
+.lw-pv-pop { position: absolute; z-index: 4; margin-top: 6px; transform: translateX(-50%); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2); border-radius: 8px; }
+.lw-pv-composer {
+  position: absolute; z-index: 5; display: flex; flex-direction: column; gap: 8px; padding: 12px;
+  border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface); color: var(--text);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25); font-size: 0.88rem; cursor: default;
+}
+
+/* Note colours: highlight fill (light, shown over the white page) */
+.lw-note-yellow { background: #facc15; }
+.lw-note-green { background: #4ade80; }
+.lw-note-blue { background: #60a5fa; }
+.lw-note-pink { background: #f472b6; }
+
+/* pdf.js text layer (subset of pdfjs-dist/web/pdf_viewer.css, scoped to the viewer) */
+.lw-pv .textLayer { position: absolute; text-align: initial; inset: 0; overflow: clip; opacity: 1; line-height: 1; text-size-adjust: none; forced-color-adjust: none; transform-origin: 0 0; caret-color: CanvasText; z-index: 2; --min-font-size: 1; --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size)); --min-font-size-inv: calc(1 / var(--min-font-size)); }
+.lw-pv .textLayer :is(span, br) { color: transparent; position: absolute; white-space: pre; cursor: text; transform-origin: 0% 0%; }
+.lw-pv .textLayer > :not(.markedContent), .lw-pv .textLayer .markedContent span:not(.markedContent) { z-index: 1; --font-height: 0; font-size: calc(var(--text-scale-factor) * var(--font-height)); --scale-x: 1; --rotate: 0deg; transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv)); }
+.lw-pv .textLayer .markedContent { display: contents; }
+.lw-pv .textLayer ::selection { background: rgba(0, 0, 255, 0.25); }
+.lw-pv .textLayer br::selection { background: transparent; }
+.lw-pv .textLayer .endOfContent { display: block; position: absolute; inset: 100% 0 0; z-index: 0; cursor: default; user-select: none; }
+.lw-pv .textLayer.selecting .endOfContent { top: 0; }
+
+/* Notes panel */
+.lw-notes { display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+.lw-notes .lw-seg button { padding: 3px 8px; font-size: 0.76rem; }
+.lw-notes-list {
+  position: relative; list-style: none; margin: 0; padding: 0; max-height: 420px; overflow-y: auto;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; align-items: start;
+}
+.lw-note { display: flex; flex-direction: column; gap: 6px; padding: 10px; border: 1px solid var(--border); border-left-width: 4px; border-radius: 8px; background: var(--surface); cursor: pointer; font-size: 0.88rem; }
+.lw-note:hover { background: var(--surface-2); }
+.lw-note-active, .lw-note-active:hover { border-color: var(--primary); background: var(--primary-soft); }
+.lw-note-new { cursor: default; border-left-color: var(--primary); }
+.lw-note-new:hover { background: var(--surface); }
+.lw-note-edge-yellow { border-left-color: #facc15; }
+.lw-note-edge-green { border-left-color: #4ade80; }
+.lw-note-edge-blue { border-left-color: #60a5fa; }
+.lw-note-edge-pink { border-left-color: #f472b6; }
+.lw-note-meta { display: flex; flex-wrap: wrap; gap: 4px 8px; font-size: 0.74rem; color: var(--muted); }
+.lw-note-page { font-weight: 650; color: var(--text); }
+.lw-note-quote { margin: 0; padding: 2px 8px; border-left: 2px solid var(--border-strong); color: var(--muted); font-style: italic; font-size: 0.82rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+.lw-note-body { margin: 0; white-space: pre-wrap; word-break: break-word; line-height: 1.45; }
+.lw-note-actions { display: flex; gap: 4px; margin: -4px 0 -4px -8px; }
+.lw-note-editor { display: flex; flex-direction: column; gap: 8px; }
+.lw-note-colors { display: inline-flex; gap: 6px; }
+.lw-note-swatch { width: 18px; height: 18px; padding: 0; border-radius: 50%; border: 2px solid transparent; cursor: pointer; }
+.lw-note-swatch-on { border-color: var(--text); box-shadow: 0 0 0 2px var(--surface) inset; }
+
+/* "In this document" index above the PDF */
+.lw-docindex { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+.lw-docindex-row { display: flex; align-items: center; gap: 8px 10px; flex-wrap: wrap; }
+.lw-docindex-label { font-size: 0.74rem; font-weight: 650; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.lw-docindex-chips { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; min-width: 0; }
+.lw-docindex-jump.input { width: auto; max-width: 260px; margin-left: auto; padding-top: 4px; padding-bottom: 4px; font-size: 0.82rem; }
+.lw-chip { padding: 3px 10px; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit; font-size: 0.8rem; cursor: pointer; }
+.lw-chip:hover { border-color: var(--primary); }
+.lw-chip-term { border-color: var(--primary); color: var(--primary); }
+.lw-chip-clause { border-style: dashed; }
+.lw-chip-on, .lw-chip-on:hover { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.lw-docindex-detail { padding: 8px 10px; border-radius: 6px; background: var(--surface-2); font-size: 0.86rem; }
+.lw-docindex-detail p { margin: 4px 0 0; white-space: pre-wrap; line-height: 1.45; }
+.lw-docindex-detail-clause p { max-height: 160px; overflow-y: auto; }
+
+/* Tasks (Alerts tab) and tracked action items */
+.lw-task-add { display: grid; grid-template-columns: minmax(0, 1fr) 170px auto; gap: 8px; margin-bottom: 12px; }
+.lw-tasks { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-direction: column; }
+.lw-task { display: flex; align-items: flex-start; gap: 10px; padding: 8px 4px; border-bottom: 1px solid var(--border); }
+.lw-task:last-child { border-bottom: none; }
+.lw-task input[type='checkbox'] { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
+.lw-task-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.lw-task-title { word-break: break-word; }
+.lw-task-done .lw-task-title { text-decoration: line-through; color: var(--muted); }
+.lw-task-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 0.78rem; color: var(--muted); }
+.lw-link { padding: 0; border: none; background: none; color: var(--primary); font: inherit; cursor: pointer; text-align: left; }
+.lw-link:hover { text-decoration: underline; }
+.lw-att-actions li { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+@media (max-width: 560px) {
+  .lw-task-add { grid-template-columns: 1fr; }
+}
+
 /* Supporting document pane */
 .lw-att-view { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
 .lw-att-preview { min-width: 0; }
@@ -194,7 +294,7 @@ a.lw-chip:hover { border-color: var(--primary); }
 @media (max-width: 960px) {
   .lw-overview-grid, .lw-panels, .lw-docs { grid-template-columns: 1fr; }
   .lw-docs-side { position: static; max-height: 320px; }
-  .lw-pdf { height: 60vh; }
+  .lw-pdf, .lw-pv-scroll { height: 60vh; }
 }
 @media (max-width: 560px) {
   .lw-field { grid-template-columns: 1fr; gap: 2px; }

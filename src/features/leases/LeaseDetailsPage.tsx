@@ -18,6 +18,7 @@ import CamTab from '../intelligence/CamTab.tsx';
 import AbstractTab from './workspace/AbstractTab.tsx';
 import ClausesTab from './workspace/ClausesTab.tsx';
 import DocumentsTab from './workspace/DocumentsTab.tsx';
+import TasksCard from './workspace/TasksCard.tsx';
 import { RecordTab, SignaturesTab } from './workspace/RecordTabs.tsx';
 import ActivityTab from './workspace/ActivityTab.tsx';
 import UploadZone from './UploadZone.tsx';
@@ -159,7 +160,12 @@ export default function LeaseDetailsPage() {
 
       <div className="lw-tab-body">
         {tab === 'abstract' && <AbstractTab detail={data} docId={docId} onDocChange={(id) => navigate({ doc: id })} onChanged={refresh} version={version} />}
-        {tab === 'alerts' && <Card title={t('leases.tab.alerts')}><AlertList alerts={alerts} /></Card>}
+        {tab === 'alerts' && (
+          <div className="stack" style={{ gap: 16 }}>
+            <Card title={t('leases.tab.alerts')}><AlertList alerts={alerts} /></Card>
+            <TasksCard leaseId={lease.id} onChanged={reload} onOpenAttachment={(id) => navigate({ tab: 'documents', att: id, page: null })} />
+          </div>
+        )}
         {tab === 'clauses' && <ClausesTab leaseId={lease.id} onChanged={() => setVersion((v) => v + 1)} />}
         {tab === 'opportunities' && <OpportunitiesTab leaseId={lease.id} />}
         {tab === 'rentAudit' && <RentAuditTab leaseId={lease.id} />}
@@ -172,6 +178,7 @@ export default function LeaseDetailsPage() {
             page={page}
             onSelect={(id, pg) => navigate({ doc: id, att: null, page: pg ?? null })}
             onSelectAttachment={(id) => navigate({ att: id, page: null })}
+            onChanged={reload}
           />
         )}
         {tab === 'signatures' && <SignaturesTab detail={data} onChanged={refresh} />}

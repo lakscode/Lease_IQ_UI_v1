@@ -6,11 +6,25 @@ import { formatDate } from '../../lib/format.ts';
 import type { DocType } from '../../api/types.ts';
 import type { FileStatus, LeaseAlert, SignatureRecord } from './types.ts';
 import { alertText, docTypeLabel } from './labels.ts';
+import { daysUntil } from './workspace/attachments.ts';
 
 export function DocTypeBadge({ type }: { type: DocType | string }) {
   const t = useT();
   const tone = type === 'main_lease' ? 'primary' : type === 'amendment' || type === 'addendum' ? 'info' : 'neutral';
   return <Badge tone={tone}>{docTypeLabel(t, type)}</Badge>;
+}
+
+/** Lease end date: red when expired or within 6 months, amber within 12 months (same windows as the lease alerts). */
+export function LeaseExpiryBadge({ date }: { date: string | null | undefined }) {
+  const t = useT();
+  if (!date) return null;
+  const days = daysUntil(date);
+  const tone = days < 0 || days <= 182 ? 'danger' : days <= 365 ? 'warning' : 'neutral';
+  return (
+    <Badge tone={tone} title={t('leases.files.expiryHint')}>
+      {t(days < 0 ? 'leases.files.expired' : 'leases.files.expires', { date: formatDate(date) })}
+    </Badge>
+  );
 }
 
 export function FileStatusBadge({ status }: { status: FileStatus }) {

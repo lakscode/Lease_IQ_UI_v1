@@ -32,7 +32,8 @@ export function documentName(t: TFunction, doc: { title: string | null; doc_type
 
 export function alertText(t: TFunction, alert: LeaseAlert): string {
   const key = `leases.alert.${alert.code}`;
-  const text = t(key);
+  // Follow-up alerts carry their subject (task title or file name) in the message: {name} in the translation.
+  const text = t(key, { name: alert.message });
   return text === key ? alert.message : text;
 }
 

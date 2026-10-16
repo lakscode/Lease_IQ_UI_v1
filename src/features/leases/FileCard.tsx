@@ -8,7 +8,7 @@ import { useAuth } from '../../auth/useAuth.ts';
 import { del, get, post } from '../../api/client.ts';
 import { useAsync } from '../../lib/useAsync.ts';
 import { formatBytes, formatDateTime, formatTokens } from '../../lib/format.ts';
-import { DocTypeBadge, FileStatusBadge } from './shared.tsx';
+import { DocTypeBadge, FileStatusBadge, LeaseExpiryBadge } from './shared.tsx';
 import { errorText, stepLabel } from './labels.ts';
 import { openSignedUrl } from './open-signed-url.ts';
 import type { LeaseFile, PipelineStep, ProcessingLog } from './types.ts';
@@ -150,20 +150,22 @@ export default function FileCard({ file, onChanged }: { file: LeaseFile; onChang
         <div className="lw-file-docs">
           <div className="muted small">{t('leases.files.documentsFound', { count: file.documents.length })}</div>
           <ul>
-            {file.documents.map((d) => (
-              <li key={d.id}>
-                <DocTypeBadge type={d.doc_type} />
-                {d.lease_id ? (
-                  <Link to={`/leases/${d.lease_id}/details?tab=documents&doc=${d.id}`} className="lw-break">{d.title || t(`leases.docType.${d.doc_type}`)}</Link>
-                ) : (
-                  <span className="lw-break">{d.title || t(`leases.docType.${d.doc_type}`)}</span>
-                )}
-                <span className="muted small">
-                  {d.page_start != null ? t('leases.files.pageRange', { from: d.page_start, to: d.page_end ?? d.page_start }) : ''}
-                  {d.tenant_name ? ` · ${d.tenant_name}` : ''}
-                </span>
-              </li>
-            ))}
+            {file.documents.map((d) => {
+              // Lead with the tenant (what users scan for); the full document title is in the link's tooltip.
+              const title = d.title || t(`leases.docType.${d.doc_type}`);
+              return (
+                <li key={d.id}>
+                  <DocTypeBadge type={d.doc_type} />
+                  {d.lease_id ? (
+                    <Link to={`/leases/${d.lease_id}/details?tab=documents&doc=${d.id}`} className="lw-break" title={title}>{d.tenant_name || title}</Link>
+                  ) : (
+                    <span className="lw-break">{d.tenant_name || title}</span>
+                  )}
+                  <LeaseExpiryBadge date={d.expiration_date} />
+                  {d.page_start != null && <span className="muted small">{t('leases.files.pageRange', { from: d.page_start, to: d.page_end ?? d.page_start })}</span>}
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}

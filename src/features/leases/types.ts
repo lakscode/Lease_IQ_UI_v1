@@ -31,6 +31,9 @@ export interface FileDoc {
   page_end: number | null;
   tenant_name: string | null;
   premises_address: string | null;
+  /** The lease's current (as amended) expiration date and status (absent from older API versions). */
+  expiration_date?: string | null;
+  lease_status?: LeaseStatus | null;
 }
 
 export interface LeaseFile {

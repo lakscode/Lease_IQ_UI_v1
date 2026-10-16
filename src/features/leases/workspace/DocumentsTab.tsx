@@ -1,7 +1,7 @@
 // Documents workspace for one lease: a searchable list of the lease documents (main lease, amendments, …) and
 // the supporting documents (attachments), with the selected one shown alongside. Lease documents open in a
-// PDF viewer (signed URL in an iframe, #page=N) or page-text view; supporting documents show a preview, their
-// details and the AI review.
+// PDF viewer with notes on selected text (PdfNotesViewer) or a page-text view; supporting documents show a
+// preview, their details and the AI review.
 import { useEffect, useState } from 'react';
 import { Alert, Badge, Button, Card, EmptyState, ErrorState, Input, Select, Spinner } from '../../../components/ui.tsx';
 import { cx } from '../../../components/ui-utils.ts';
@@ -16,7 +16,9 @@ import { documentName } from '../labels.ts';
 import { openSignedUrl } from '../open-signed-url.ts';
 import type { LeaseDetail, LeaseDocument } from '../types.ts';
 import { fileLabel, useAttachments, type Attachment } from './attachments.ts';
-import { AttachmentView, UploadModal } from './AttachmentView.tsx';
+import { AttachmentView, ExpiryBadge, UploadModal } from './AttachmentView.tsx';
+import DocIndex from './DocIndex.tsx';
+import PdfNotesViewer from './PdfNotesViewer.tsx';
 
 function LeaseDocView({ leaseId, doc, page, onPage }: { leaseId: string; doc: LeaseDocument; page: number | null; onPage: (page: number) => void }) {
   const t = useT();
@@ -101,13 +103,14 @@ function LeaseDocView({ leaseId, doc, page, onPage }: { leaseId: string; doc: Le
         {doc.file_name && <span className="lw-doc-file" title={doc.file_name}>{doc.file_name}</span>}
       </div>
       {doc.summary && <p className="lw-doc-summary">{doc.summary}</p>}
+      <DocIndex leaseId={leaseId} doc={doc} page={current} onPage={onPage} />
 
       {!doc.has_pdf && <Alert tone="info">{t('leases.docs.noPdf')}</Alert>}
       {view === 'pdf' && doc.has_pdf && (
         <>
           {urlError && <Alert tone="danger">{urlError}</Alert>}
           {!url && !urlError && <Spinner />}
-          {url && <iframe key={`${url}-${current}`} className="lw-pdf" src={`${url}#page=${current}`} title={documentName(t, doc)} />}
+          {url && <PdfNotesViewer leaseId={leaseId} docId={doc.id} url={url} title={documentName(t, doc)} page={current} onPage={onPage} />}
         </>
       )}
       {view === 'text' && (
@@ -129,13 +132,15 @@ function AttachmentStatus({ att, aiOn }: { att: Attachment; aiOn: boolean }) {
   return issues ? <Badge tone="warning" title={t('intel.att.issues')}>{issues}</Badge> : null;
 }
 
-export default function DocumentsTab({ detail, docId, attId, page, onSelect, onSelectAttachment }: {
+export default function DocumentsTab({ detail, docId, attId, page, onSelect, onSelectAttachment, onChanged }: {
   detail: LeaseDetail;
   docId: string | null;
   attId: string | null;
   page: number | null;
   onSelect: (docId: string, page?: number | null) => void;
   onSelectAttachment: (attId: string | null) => void;
+  /** Tasks or reviews changed (the page refreshes the lease alerts). */
+  onChanged?: () => void;
 }) {
   const t = useT();
   const { canEdit, config } = useAuth();
@@ -195,6 +200,7 @@ export default function DocumentsTab({ detail, docId, attId, page, onSelect, onS
                 <span className="lw-docs-item-title">{a.file_name}</span>
                 <span className="lw-docs-item-meta">
                   {a.category && <Badge tone="info">{t(`intel.attCat.${a.category}`)}</Badge>}
+                  <ExpiryBadge att={a} compact />
                   <span>{formatDate(a.doc_date ?? a.created_at)}</span>
                 </span>
               </span>
@@ -206,7 +212,7 @@ export default function DocumentsTab({ detail, docId, attId, page, onSelect, onS
 
       <div className="lw-docs-pane">
         {attId ? (
-          att ? <AttachmentView key={att.id} att={att} api={atts} onDeleted={() => onSelectAttachment(null)} />
+          att ? <AttachmentView key={att.id} att={att} api={atts} onDeleted={() => onSelectAttachment(null)} onTasksChanged={onChanged} />
             : atts.loading ? <Spinner />
               : <EmptyState icon="📎" title={t('leases.docs.notFound')} action={<Button onClick={() => onSelectAttachment(null)}>{t('leases.docs.backToLease')}</Button>} />
         ) : doc ? (

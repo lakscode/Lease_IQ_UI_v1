@@ -57,7 +57,32 @@ export function fileLabel(name: string): string {
   return (ext || 'FILE').slice(0, 4).toUpperCase();
 }
 
-export const inlineUrl = (id: string) => get<{ url: string }>(`/attachments/${id}/download`, { inline: 1 });
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const EXPIRY_FIELD_RE = /expir|valid until|valid through|end date|coverage end/i;
+
+/**
+ * Expiry date of a supporting document, from its AI review: a reviewed field that names an expiry (e.g.
+ * "Policy expiration": "2026-05-01"), else the key date of an insurance certificate. Mirrors API
+ * lib/lease-followups.ts expiryOf (which raises the matching lease alerts).
+ */
+export function expiryOf(att: Pick<Attachment, 'category' | 'ai_review'>): string | null {
+  const review = att.ai_review;
+  if (!review) return null;
+  for (const [key, value] of Object.entries(review.fields ?? {})) {
+    const v = String(value ?? '').trim().slice(0, 10);
+    if (EXPIRY_FIELD_RE.test(key) && DATE_RE.test(v)) return v;
+  }
+  return att.category === 'insurance' && review.key_date && DATE_RE.test(review.key_date) ? review.key_date : null;
+}
+
+/** Whole days from today (local) to an ISO date; negative when it has passed. */
+export function daysUntil(date: string): number {
+  const [y, m, d] = date.split('-').map(Number);
+  const now = new Date();
+  return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())) / 86_400_000);
+}
+
+export const inlineUrl =(id: string) => get<{ url: string }>(`/attachments/${id}/download`, { inline: 1 });
 export const downloadUrl = (id: string) => get<{ url: string }>(`/attachments/${id}/download`);
 
 export function useAttachments(leaseId: string, aiOn: boolean) {

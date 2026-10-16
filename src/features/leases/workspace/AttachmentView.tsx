@@ -8,7 +8,8 @@ import { formatBytes, formatDate, formatDateTime, formatMoney } from '../../../l
 import { AiNotConfigured, JobStatusBadge, SeverityBadge } from '../../intelligence/shared.tsx';
 import { errorText, isAiNotConfigured } from '../../intelligence/helpers.ts';
 import { openSignedUrl } from '../open-signed-url.ts';
-import { ACCEPT, CATEGORIES, EXTENSIONS, downloadUrl, fileExt, inlineUrl, previewKind, type Attachment, type AttachmentMeta, type AttachmentsApi } from './attachments.ts';
+import { ACCEPT, CATEGORIES, EXTENSIONS, daysUntil, downloadUrl, expiryOf, fileExt, inlineUrl, previewKind, type Attachment, type AttachmentMeta, type AttachmentsApi } from './attachments.ts';
+import { useLeaseTasks } from './tasks.ts';
 
 const EMPTY_META: AttachmentMeta = { category: '', doc_date: '', notes: '' };
 
@@ -185,11 +186,35 @@ function Preview({ att }: { att: Attachment }) {
     : <iframe className="lw-pdf" src={url} title={att.file_name} />;
 }
 
-export function AttachmentView({ att, api, onDeleted }: { att: Attachment; api: AttachmentsApi; onDeleted: () => void }) {
+export function ExpiryBadge({ att, compact }: { att: Pick<Attachment, 'category' | 'ai_review'>; compact?: boolean }) {
+  const t = useT();
+  const date = expiryOf(att);
+  if (!date) return null;
+  const days = daysUntil(date);
+  const title = t('leases.docs.expiresOn', { date: formatDate(date) });
+  if (days < 0) return <Badge tone="danger" title={title}>{t('leases.docs.expired')}</Badge>;
+  if (days <= 60) {
+    const label = days === 0 ? t('leases.docs.expiresToday') : days === 1 ? t('leases.docs.expiresTomorrow') : t('leases.docs.expiresIn', { count: days });
+    return <Badge tone={days <= 30 ? 'danger' : 'warning'} title={title}>{label}</Badge>;
+  }
+  return compact ? null : <Badge tone="success" title={title}>{t('leases.docs.validUntil', { date: formatDate(date) })}</Badge>;
+}
+
+export function AttachmentView({ att, api, onDeleted, onTasksChanged }: { att: Attachment; api: AttachmentsApi; onDeleted: () => void; onTasksChanged?: () => void }) {
   const t = useT();
   const toast = useToast();
   const confirm = useConfirm();
   const { canEdit, config, currency } = useAuth();
+  const tasks = useLeaseTasks(att.lease_id, onTasksChanged);
+
+  const track = async (text: string, due: string | null) => {
+    try {
+      await tasks.create({ title: text.trim(), due_date: due, attachment_id: att.id });
+      toast(t('leases.tasks.added'));
+    } catch (err) {
+      fail(err);
+    }
+  };
   const [editing, setEditing] = useState<Attachment | null>(null);
   const [aiError, setAiError] = useState(false);
   const aiOn = config?.ai !== false;
@@ -246,6 +271,7 @@ export function AttachmentView({ att, api, onDeleted }: { att: Attachment; api: 
     >
       <div className="lw-doc-meta">
         {att.category ? <Badge tone="info">{t(`intel.attCat.${att.category}`)}</Badge> : <Badge>{t('leases.docs.uncategorized')}</Badge>}
+        <ExpiryBadge att={att} />
         {att.doc_date && <span>{formatDate(att.doc_date)}</span>}
         <span>{formatBytes(att.file_size)}</span>
         <span>{t('leases.docs.uploaded', { date: formatDateTime(att.created_at) })}</span>
@@ -289,7 +315,21 @@ export function AttachmentView({ att, api, onDeleted }: { att: Attachment; api: 
               {review.action_items?.length > 0 && (
                 <div>
                   <strong className="small">{t('intel.att.actions')}</strong>
-                  <ul>{review.action_items.map((a, i) => <li key={i}>{a.text}{a.due_date && <span className="muted"> — {t('intel.opp.due')} {formatDate(a.due_date)}</span>}</li>)}</ul>
+                  <ul className="lw-att-actions">
+                    {review.action_items.map((a, i) => {
+                      const tracked = tasks.data?.some((x) => x.attachment_id === att.id && x.title === a.text.trim().slice(0, 300));
+                      return (
+                        <li key={i}>
+                          <span>{a.text}{a.due_date && <span className="muted"> — {t('intel.opp.due')} {formatDate(a.due_date)}</span>}</span>
+                          {tracked ? (
+                            <Badge tone="success" title={t('leases.tasks.trackedHint')}>✓ {t('leases.tasks.tracked')}</Badge>
+                          ) : canEdit && tasks.data ? (
+                            <Button size="sm" variant="ghost" title={t('leases.tasks.trackHint')} onClick={() => void track(a.text, a.due_date)}>+ {t('leases.tasks.track')}</Button>
+                          ) : null}
+                        </li>
+                      );
+                    })}
+                  </ul>
                 </div>
               )}
               {fields.length > 0 && (

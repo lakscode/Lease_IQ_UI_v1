@@ -12,6 +12,7 @@
   "dependencies": {
     "@azure/msal-browser": "5.20.0",
     "@supabase/supabase-js": "2.117.2",
+    "pdfjs-dist": "5.7.284",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-router": "7.18.4",
