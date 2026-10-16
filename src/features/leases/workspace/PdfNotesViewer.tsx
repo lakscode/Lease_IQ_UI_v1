@@ -119,7 +119,7 @@ function ClauseEditor({ onSave, onCancel }: { onSave: (type: string, section: st
         <option value="">{taxonomies.data ? t('leases.userClause.chooseType') : t('common.loading')}</option>
         {taxonomies.data && ([['leases.clauses.typeStandard', taxonomies.data.standard], ['leases.clauses.typeLease', taxonomies.data.lease]] as [string, string[]][]).map(([label, list]) => (
           <optgroup key={label} label={t(label)}>
-            {list.map((name) => <option key={name} value={name}>{name}</option>)}
+            {[...list].sort((a, b) => a.localeCompare(b)).map((name) => <option key={name} value={name}>{name}</option>)}
           </optgroup>
         ))}
       </Select>

@@ -77,6 +77,8 @@ export interface LeaseListItem {
   document_count: number;
   main_document_id: string | null;
   updated_at: string;
+  /** First lease this one is listed under (same "Add amendment" upload or split PDF); absent from older APIs. */
+  parent_lease_id?: string | null;
 }
 
 export interface TermValue {

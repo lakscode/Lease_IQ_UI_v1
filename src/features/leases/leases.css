@@ -104,6 +104,16 @@ a.lw-chip:hover { border-color: var(--primary); }
 .lw-clause-change { white-space: normal; }
 .lw-quote { margin: 6px 0; padding: 6px 12px; border-left: 3px solid var(--border-strong); color: var(--text); font-size: 0.9rem; white-space: pre-wrap; word-break: break-word; }
 
+/* Leases list: child leases under their first lease */
+.lw-lease-cell { display: flex; align-items: flex-start; gap: 6px; }
+.lw-tree-toggle { flex: none; width: 22px; height: 22px; margin-top: -1px; padding: 0; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--muted); font-size: 0.8rem; line-height: 1; cursor: pointer; }
+.lw-tree-toggle:hover { border-color: var(--primary); color: var(--primary); }
+.lw-tree-spacer { flex: none; width: 22px; }
+.lw-tree-branch { flex: none; width: 22px; padding-left: 14px; color: var(--muted); box-sizing: content-box; }
+.lw-tree-count { margin-left: 6px; }
+.table tr.lw-lease-child > td { background: var(--surface-2); }
+.table tr.lw-lease-child > td:first-child { box-shadow: inset 3px 0 0 var(--primary); }
+
 /* Documents */
 .lw-docs { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; align-items: start; }
 .lw-docs-side {

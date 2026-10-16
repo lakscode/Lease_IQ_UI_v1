@@ -60,7 +60,7 @@ function ClauseEditor({ clause, taxonomies, onSave, onCancel }: {
         {!groups.some(([, list]) => list.includes(clause.clause_type)) && <option value={clause.clause_type}>{clause.clause_type}</option>}
         {groups.map(([label, list]) => (
           <optgroup key={label} label={t(label)}>
-            {list.map((name) => <option key={name} value={name}>{name}</option>)}
+            {[...list].sort((a, b) => a.localeCompare(b)).map((name) => <option key={name} value={name}>{name}</option>)}
           </optgroup>
         ))}
       </Select>

@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { Alert, Button, Card, EmptyState, ErrorState, Field, Input, LeaseStatusBadge, Modal, PageHeader, Select, SortHeader, Spinner, StatTile } from '../../components/ui.tsx';
-import { sortRows } from '../../components/ui-utils.ts';
+import { cx, sortRows } from '../../components/ui-utils.ts';
 import { useT } from '../../i18n/index.tsx';
 import { useAuth } from '../../auth/useAuth.ts';
 import { apiUrl, get, post } from '../../api/client.ts';
@@ -113,6 +113,26 @@ export default function LeasesPage() {
   }, [completedKey, reloadLeases, reloadAllLeases]);
 
   const sortedLeases = useMemo(() => sortRows(leases.data ?? [], sort.key, sort.dir), [leases.data, sort]);
+  // Child leases (created from an "Add amendment" upload or a split PDF) are listed under their first lease, in
+  // commencement order. A child whose parent is filtered out stays a top-level row.
+  const tree = useMemo(() => {
+    const ids = new Set(sortedLeases.map((l) => l.id));
+    const children = new Map<string, LeaseListItem[]>();
+    const top: LeaseListItem[] = [];
+    for (const l of sortedLeases) {
+      if (l.parent_lease_id && ids.has(l.parent_lease_id)) children.set(l.parent_lease_id, [...(children.get(l.parent_lease_id) ?? []), l]);
+      else top.push(l);
+    }
+    for (const list of children.values()) list.sort((a, b) => (a.commencement_date ?? '9999').localeCompare(b.commencement_date ?? '9999'));
+    return { top, children };
+  }, [sortedLeases]);
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
+  const toggle = (id: string) => setCollapsed((s) => {
+    const next = new Set(s);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    return next;
+  });
   const onSort = (key: LeaseSortKey) => setSort((s) => ({ key, dir: s.key === key && s.dir === 'asc' ? 'desc' : 'asc' }));
   const summary = files.data?.summary;
 
@@ -201,13 +221,34 @@ export default function LeasesPage() {
                 </tr>
               </thead>
               <tbody>
-                {sortedLeases.map((l) => {
+                {tree.top.flatMap((parent) => {
+                  const kids = tree.children.get(parent.id) ?? [];
+                  const open = !collapsed.has(parent.id);
+                  return [parent, ...(open ? kids : [])].map((l) => {
                   const days = daysUntil(l.expiration_date);
+                  const isChild = l !== parent;
                   return (
-                    <tr key={l.id} className="clickable" onClick={() => navigate(`/leases/${l.id}`)}>
+                    <tr key={l.id} className={cx('clickable', isChild && 'lw-lease-child')} onClick={() => navigate(`/leases/${l.id}`)}>
                       <td>
-                        <Link to={`/leases/${l.id}`} className="cell-title" onClick={(e) => e.stopPropagation()}>{l.tenant_name || t('leases.unnamed')}</Link>
-                        {l.landlord_name && <div className="cell-sub">{l.landlord_name}</div>}
+                        <div className="lw-lease-cell">
+                          {kids.length > 0 && !isChild ? (
+                            <button
+                              type="button"
+                              className="lw-tree-toggle"
+                              aria-expanded={open}
+                              aria-label={open ? t('leases.list.collapse') : t('leases.list.expand', { count: kids.length })}
+                              title={open ? t('leases.list.collapse') : t('leases.list.expand', { count: kids.length })}
+                              onClick={(e) => { e.stopPropagation(); toggle(parent.id); }}
+                            >
+                              {open ? '▾' : '▸'}
+                            </button>
+                          ) : isChild ? <span className="lw-tree-branch" aria-hidden="true">↳</span> : <span className="lw-tree-spacer" aria-hidden="true" />}
+                          <div>
+                            <Link to={`/leases/${l.id}`} className="cell-title" onClick={(e) => e.stopPropagation()}>{l.tenant_name || t('leases.unnamed')}</Link>
+                            {kids.length > 0 && !isChild && <span className="lw-docs-count lw-tree-count" title={t('leases.list.children', { count: kids.length })}>+{kids.length}</span>}
+                            {l.landlord_name && <div className="cell-sub">{l.landlord_name}</div>}
+                          </div>
+                        </div>
                       </td>
                       <td className="lw-break">{l.premises_address || '—'}</td>
                       <td>
@@ -222,6 +263,7 @@ export default function LeasesPage() {
                       <td className="num">{l.document_count}</td>
                     </tr>
                   );
+                  });
                 })}
               </tbody>
             </table>
