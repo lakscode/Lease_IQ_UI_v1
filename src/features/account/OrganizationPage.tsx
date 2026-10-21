@@ -8,10 +8,11 @@ import { formatDate } from '../../lib/format.ts';
 import { useAsync } from '../../lib/useAsync.ts';
 import { MembersPanel } from './MembersPanel.tsx';
 import { UsageReport } from './UsageReport.tsx';
+import { LoginActivityPanel } from './LoginActivityPanel.tsx';
 import { CURRENCIES, type OrgDetails } from './types.ts';
 import './account.css';
 
-type Tab = 'details' | 'members' | 'usage';
+type Tab = 'details' | 'members' | 'usage' | 'logins';
 
 export default function OrganizationPage() {
   const t = useT();
@@ -27,6 +28,7 @@ export default function OrganizationPage() {
           { key: 'details', label: t('account.org.tabDetails') },
           { key: 'members', label: t('account.org.tabMembers'), count: org.data?.member_count },
           { key: 'usage', label: t('account.org.tabUsage') },
+          { key: 'logins', label: t('account.logins.title') },
         ]}
         active={tab}
         onChange={setTab}
@@ -36,6 +38,7 @@ export default function OrganizationPage() {
       )}
       {tab === 'members' && <MembersPanel base="/orgs/current" />}
       {tab === 'usage' && <UsageReport scope="org" />}
+      {tab === 'logins' && <LoginActivityPanel scope="org" />}
     </div>
   );
 }

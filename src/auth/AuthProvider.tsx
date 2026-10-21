@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase.ts';
 import { captureOAuthRedirectError } from '../lib/errorLog.ts';
-import { get, setActiveOrgId } from '../api/client.ts';
+import { get, post, setActiveOrgId } from '../api/client.ts';
 import type { AppConfig, MeResponse } from '../api/types.ts';
 import { useI18n, LOCALES, type Locale } from '../i18n/index.tsx';
 import { AuthContext, type AuthValue } from './useAuth.ts';
@@ -84,6 +84,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    // Sign-in history: mark this session signed out (best effort; never blocks signing out).
+    await Promise.race([post('/me/logout').catch(() => undefined), new Promise((r) => setTimeout(r, 1500))]);
     await supabase.auth.signOut();
     try {
       sessionStorage.removeItem(ORG_KEY);

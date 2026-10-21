@@ -65,3 +65,7 @@
 
 /* Error log */
 .acct-error-details { margin: 6px 0 0; padding: 8px 10px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; font-size: 0.75rem; white-space: pre-wrap; word-break: break-word; max-width: 560px; }
+
+/* Login activity */
+.acct-linkbtn { background: none; border: none; padding: 0; color: var(--primary); cursor: pointer; font: inherit; text-align: left; }
+.acct-linkbtn:hover { text-decoration: underline; }
