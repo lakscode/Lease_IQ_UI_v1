@@ -349,3 +349,30 @@ a.lw-chip:hover { border-color: var(--primary); }
   .lw-field { grid-template-columns: 1fr; gap: 2px; }
   .lw-file-progress { grid-template-columns: 1fr; }
 }
+
+/* Review */
+.lw-review-cell { gap: 6px; flex-wrap: nowrap; }
+.lw-review-intro { margin: 0 0 10px; }
+.lw-review-filter { margin-top: 12px; }
+.lw-review-table td { vertical-align: top; }
+.lw-review-table td:first-child { width: 18%; }
+.lw-review-table td:last-child { width: 26%; min-width: 230px; }
+.lw-review-value { max-width: 340px; word-break: break-word; }
+.lw-review-attn { background: var(--warning-soft); }
+.lw-review-check, .lw-review-ai { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+.lw-review-ai { margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--border); }
+.lw-review-snippet { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 4px; color: var(--text); text-decoration: none; }
+.lw-review-snippet:hover { color: var(--primary); }
+.lw-review-fix { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.lw-review-note { margin-top: 6px; font-size: 0.85rem; }
+.lw-review-extra { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; border-top: 1px solid var(--border); }
+.lw-verdicts { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+.lw-verdict { padding: 3px 10px; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit; font-size: 0.8rem; cursor: pointer; }
+.lw-verdict:hover:not(:disabled) { border-color: var(--primary); }
+.lw-verdict:disabled { cursor: default; opacity: 0.7; }
+.lw-verdict-on.lw-verdict-correct { background: var(--success-soft); border-color: var(--success); color: var(--success); opacity: 1; }
+.lw-verdict-on.lw-verdict-incorrect, .lw-verdict-on.lw-verdict-missing { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); opacity: 1; }
+.lw-verdict-on.lw-verdict-not_applicable { background: var(--surface-2); border-color: var(--muted); color: var(--muted); opacity: 1; }
+@media (max-width: 560px) {
+  .lw-review-table td:first-child, .lw-review-table td:last-child { width: auto; min-width: 0; }
+}

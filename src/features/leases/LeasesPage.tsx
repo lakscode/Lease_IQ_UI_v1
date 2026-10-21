@@ -1,7 +1,7 @@
 // Leases: upload files, track processing (and drive it while the tab is open), browse leases.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
-import { Alert, Button, Card, EmptyState, ErrorState, Field, Input, LeaseStatusBadge, Modal, PageHeader, Select, SortHeader, Spinner, StatTile } from '../../components/ui.tsx';
+import { Alert, Badge, Button, Card, EmptyState, ErrorState, Field, Input, LeaseStatusBadge, Modal, PageHeader, Select, SortHeader, Spinner, StatTile } from '../../components/ui.tsx';
 import { cx, sortRows } from '../../components/ui-utils.ts';
 import { useT } from '../../i18n/index.tsx';
 import { useAuth } from '../../auth/useAuth.ts';
@@ -47,6 +47,33 @@ function useProcessingDriver(data: FilesResponse | null, reload: () => void) {
       clearInterval(timer);
     };
   }, [activeKey, reload]);
+}
+
+/** Review button of a lease row: start / continue / see the review once abstraction is done. */
+function ReviewButton({ lease, busy, onOpen }: { lease: LeaseListItem; busy: boolean; onOpen: () => void }) {
+  const t = useT();
+  const { canEdit } = useAuth();
+  const review = lease.review;
+  if (busy) return <Button size="sm" disabled title={t('leases.review.waitAbstraction')}>{t('leases.review.start')}</Button>;
+  if (!lease.document_count) return <span className="muted small">—</span>;
+  if (review?.status === 'completed') {
+    const issues = review.summary?.incorrect ?? 0;
+    return (
+      <span className="row lw-review-cell">
+        <Button size="sm" variant="ghost" onClick={onOpen}>{t('leases.review.view')}</Button>
+        <Badge tone={issues ? 'warning' : 'success'}>{issues ? t('leases.review.corrections', { count: issues }) : t('leases.review.reviewed')}</Badge>
+      </span>
+    );
+  }
+  if (review) {
+    return (
+      <span className="row lw-review-cell">
+        <Button size="sm" variant={canEdit ? 'primary' : 'ghost'} onClick={onOpen}>{canEdit ? t('leases.review.continue') : t('leases.review.view')}</Button>
+        {review.summary && <span className="muted small">{review.summary.reviewed}/{review.summary.total}</span>}
+      </span>
+    );
+  }
+  return <Button size="sm" variant={canEdit ? 'primary' : 'ghost'} onClick={onOpen}>{canEdit ? t('leases.review.start') : t('leases.review.view')}</Button>;
 }
 
 type LeaseSortKey = 'tenant_name' | 'premises_address' | 'status' | 'expiration_date' | 'base_rent_monthly' | 'document_count';
@@ -111,6 +138,17 @@ export default function LeasesPage() {
     reloadLeases();
     reloadAllLeases();
   }, [completedKey, reloadLeases, reloadAllLeases]);
+
+  // Leases with a file still being abstracted: Review waits until it is done.
+  const busyLeases = useMemo(() => {
+    const ids = new Set<string>();
+    for (const f of files.data?.files ?? []) {
+      if (f.status !== 'queued' && f.status !== 'processing') continue;
+      if (f.target_lease_id) ids.add(f.target_lease_id);
+      for (const d of f.documents) if (d.lease_id) ids.add(d.lease_id);
+    }
+    return ids;
+  }, [files.data]);
 
   const sortedLeases = useMemo(() => sortRows(leases.data ?? [], sort.key, sort.dir), [leases.data, sort]);
   // Child leases (created from an "Add amendment" upload or a split PDF) are listed under their first lease, in
@@ -218,6 +256,7 @@ export default function LeasesPage() {
                   <SortHeader label={t('leases.list.expiration')} column="expiration_date" sort={sort} onSort={onSort} />
                   <SortHeader label={t('leases.list.rent')} column="base_rent_monthly" sort={sort} onSort={onSort} align="right" />
                   <SortHeader label={t('leases.list.documents')} column="document_count" sort={sort} onSort={onSort} align="right" />
+                  <th>{t('leases.review.column')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -261,6 +300,9 @@ export default function LeasesPage() {
                       </td>
                       <td className="num">{formatMoney(l.base_rent_monthly, currency)}</td>
                       <td className="num">{l.document_count}</td>
+                      <td className="lw-nowrap" onClick={(e) => e.stopPropagation()}>
+                        <ReviewButton lease={l} busy={busyLeases.has(l.id)} onOpen={() => navigate(`/leases/${l.id}/details?tab=review`)} />
+                      </td>
                     </tr>
                   );
                   });

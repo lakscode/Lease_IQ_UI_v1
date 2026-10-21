@@ -79,6 +79,8 @@ export interface LeaseListItem {
   updated_at: string;
   /** First lease this one is listed under (same "Add amendment" upload or split PDF); absent from older APIs. */
   parent_lease_id?: string | null;
+  /** Review after abstraction (absent from older APIs; null when not started). */
+  review?: { status: ReviewStatus; summary: ReviewSummary | null } | null;
 }
 
 export interface TermValue {
@@ -247,3 +249,68 @@ export const ABSTRACT_FIELDS: { key: string; kind: FieldKind; group: FieldGroup 
 ];
 
 export const FIELD_GROUPS: FieldGroup[] = ['parties', 'property', 'dates', 'rent', 'options', 'other'];
+
+// ---- Review (GET /leases/:id/review; checklist in API lib/review-checklist.json) ----
+
+export type ReviewStatus = 'in_progress' | 'completed';
+export type FieldVerdict = 'correct' | 'incorrect' | 'not_applicable';
+export type ClauseVerdict = 'correct' | 'incorrect' | 'missing' | 'not_applicable';
+export type CheckStatus = 'ok' | 'missing' | 'not_found' | 'invalid' | 'warning' | 'low_confidence';
+
+export interface ReviewSummary { issues: number; reviewed: number; total: number; correct: number; incorrect: number }
+
+export interface ReviewCheck { status: CheckStatus; messages: { code: string; params?: Record<string, string | number> }[] }
+
+interface ReviewVerdictInfo<V> { verdict: V | null; note: string | null; reviewed_by_name: string | null; reviewed_at: string | null }
+
+export interface ReviewFieldItem extends ReviewVerdictInfo<FieldVerdict> {
+  key: string;
+  label: string;
+  kind: FieldKind;
+  required: boolean;
+  value: string | number | null;
+  source_document_id: string | null;
+  source_title: string | null;
+  source_doc_type: DocType | null;
+  page: number | null;
+  auto: ReviewCheck;
+  ai: { status: 'correct' | 'incorrect' | 'not_in_document'; correct_value: string | null; document_id: string | null; page: number | null; note: string } | null;
+}
+
+export interface ReviewClauseItem extends ReviewVerdictInfo<ClauseVerdict> {
+  name: string;
+  required: boolean;
+  match: string[];
+  found: number;
+  verified: number;
+  best_confidence: number | null;
+  pages: number[];
+  samples: { id: string; document_id: string; document_title: string | null; clause_type: string; page: number | null; confidence: number | null; verified: boolean; text: string }[];
+  auto: ReviewCheck;
+  ai: { present: boolean; document_id: string | null; page: number | null; note: string } | null;
+}
+
+export interface ReviewResponse {
+  review: {
+    id: string;
+    status: ReviewStatus;
+    started_by_name: string | null;
+    completed_by_name: string | null;
+    completed_at: string | null;
+    ai_checked_at: string | null;
+    updated_at: string;
+  } | null;
+  min_clause_confidence: number;
+  fields: ReviewFieldItem[];
+  clauses: ReviewClauseItem[];
+  extra_clauses: { clause_type: string; count: number }[];
+  summary: ReviewSummary & {
+    fields_total: number;
+    fields_found: number;
+    fields_required_missing: number;
+    clauses_total: number;
+    clauses_found: number;
+    clauses_required_missing: number;
+    ai_disagreements: number;
+  };
+}

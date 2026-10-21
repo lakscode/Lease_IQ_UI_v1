@@ -21,6 +21,7 @@ import DocumentsTab from './workspace/DocumentsTab.tsx';
 import TasksCard from './workspace/TasksCard.tsx';
 import { RecordTab, SignaturesTab } from './workspace/RecordTabs.tsx';
 import ActivityTab from './workspace/ActivityTab.tsx';
+import ReviewTab from './workspace/ReviewTab.tsx';
 import UploadZone from './UploadZone.tsx';
 import { AlertList } from './shared.tsx';
 import { errorText } from './labels.ts';
@@ -29,7 +30,7 @@ import { useAuth } from '../../auth/useAuth.ts';
 import './leases.css';
 
 // Supporting documents (attachments) live inside the Documents tab; ?tab=attachments still resolves there.
-const TABS = ['abstract', 'alerts', 'rentAudit', 'cam', 'opportunities', 'clauses', 'documents', 'signatures', 'record', 'system', 'activity'] as const;
+const TABS = ['abstract', 'review', 'alerts', 'rentAudit', 'cam', 'opportunities', 'clauses', 'documents', 'signatures', 'record', 'system', 'activity'] as const;
 type TabKey = (typeof TABS)[number];
 
 function ReportActions({ leaseId, tenant }: { leaseId: string; tenant: string | null }) {
@@ -160,6 +161,7 @@ export default function LeaseDetailsPage() {
 
       <div className="lw-tab-body">
         {tab === 'abstract' && <AbstractTab detail={data} docId={docId} onDocChange={(id) => navigate({ doc: id })} onChanged={refresh} version={version} />}
+        {tab === 'review' && <ReviewTab detail={data} onChanged={refresh} />}
         {tab === 'alerts' && (
           <div className="stack" style={{ gap: 16 }}>
             <Card title={t('leases.tab.alerts')}><AlertList alerts={alerts} /></Card>
