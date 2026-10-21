@@ -30,7 +30,7 @@ import { useAuth } from '../../auth/useAuth.ts';
 import './leases.css';
 
 // Supporting documents (attachments) live inside the Documents tab; ?tab=attachments still resolves there.
-const TABS = ['abstract', 'review', 'alerts', 'rentAudit', 'cam', 'opportunities', 'clauses', 'documents', 'signatures', 'record', 'system', 'activity'] as const;
+const TABS = ['abstract', 'alerts', 'rentAudit', 'cam', 'opportunities', 'clauses', 'documents', 'signatures', 'record', 'system', 'activity', 'review'] as const;
 type TabKey = (typeof TABS)[number];
 
 function ReportActions({ leaseId, tenant }: { leaseId: string; tenant: string | null }) {
