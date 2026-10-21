@@ -97,7 +97,18 @@ export interface AdminSettings {
   ai_configured: boolean;
   /** How much of each document Claude reads: economy (text + signature pages) or quality (whole PDF). */
   ai_mode: 'economy' | 'quality';
-  email: { provider: 'default' | 'sendgrid'; from_name: string; from_email: string };
+  /** provider 'default' sends through an SMTP mailbox; 'sendgrid' through the SendGrid API. */
+  email: {
+    provider: 'default' | 'sendgrid';
+    from_name: string;
+    from_email: string;
+    smtp_host: string;
+    smtp_port: number;
+    smtp_security: 'ssl' | 'starttls' | 'none';
+    smtp_user: string;
+  };
+  /** An SMTP password is saved (never returned). */
+  smtp_password_set: boolean;
   sendgrid_key_set: boolean;
   /** 'settings' = saved in Settings, 'environment' = SENDGRID_API_KEY on the server */
   sendgrid_key_source: 'settings' | 'environment' | null;

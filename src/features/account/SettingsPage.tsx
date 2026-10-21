@@ -166,6 +166,13 @@ function AiModeCard({ settings, onSaved }: { settings: AdminSettings; onSaved: (
   );
 }
 
+const SMTP_PRESETS: Record<string, { label: string; host: string; port: number; security: 'ssl' | 'starttls' }> = {
+  gmail: { label: 'Gmail / Google Workspace', host: 'smtp.gmail.com', port: 465, security: 'ssl' },
+  office365: { label: 'Microsoft 365 / Outlook', host: 'smtp.office365.com', port: 587, security: 'starttls' },
+  yahoo: { label: 'Yahoo Mail', host: 'smtp.mail.yahoo.com', port: 465, security: 'ssl' },
+  zoho: { label: 'Zoho Mail', host: 'smtp.zoho.com', port: 465, security: 'ssl' },
+};
+
 function EmailCard({ settings, onSaved }: { settings: AdminSettings; onSaved: () => void }) {
   const t = useT();
   const toast = useToast();
@@ -174,6 +181,11 @@ function EmailCard({ settings, onSaved }: { settings: AdminSettings; onSaved: ()
   const [fromName, setFromName] = useState(settings.email.from_name);
   const [fromEmail, setFromEmail] = useState(settings.email.from_email);
   const [apiKey, setApiKey] = useState('');
+  const [smtpHost, setSmtpHost] = useState(settings.email.smtp_host ?? '');
+  const [smtpPort, setSmtpPort] = useState(String(settings.email.smtp_port ?? 465));
+  const [smtpSecurity, setSmtpSecurity] = useState<'ssl' | 'starttls' | 'none'>(settings.email.smtp_security ?? 'ssl');
+  const [smtpUser, setSmtpUser] = useState(settings.email.smtp_user ?? '');
+  const [smtpPassword, setSmtpPassword] = useState('');
   const [testTo, setTestTo] = useState(me?.user.email ?? '');
   const [busy, setBusy] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -185,8 +197,19 @@ function EmailCard({ settings, onSaved }: { settings: AdminSettings; onSaved: ()
     setBusy(true);
     setError(null);
     try {
-      await put('/admin/settings/email', { provider, from_name: fromName.trim(), from_email: fromEmail.trim(), sendgrid_api_key: apiKey.trim() || undefined });
+      await put('/admin/settings/email', {
+        provider,
+        from_name: fromName.trim(),
+        from_email: fromEmail.trim(),
+        sendgrid_api_key: apiKey.trim() || undefined,
+        smtp_host: smtpHost.trim(),
+        smtp_port: Number(smtpPort),
+        smtp_security: smtpSecurity,
+        smtp_user: smtpUser.trim(),
+        smtp_password: smtpPassword || undefined,
+      });
       setApiKey('');
+      setSmtpPassword('');
       toast(t('account.settings.emailSaved'));
       onSaved();
     } catch (err) {
@@ -194,6 +217,16 @@ function EmailCard({ settings, onSaved }: { settings: AdminSettings; onSaved: ()
     } finally {
       setBusy(false);
     }
+  };
+
+  // Quick setup for common mailboxes (fills the server fields; the username defaults to the sender address).
+  const applyPreset = (preset: string) => {
+    const p = SMTP_PRESETS[preset];
+    if (!p) return;
+    setSmtpHost(p.host);
+    setSmtpPort(String(p.port));
+    setSmtpSecurity(p.security);
+    if (!smtpUser.trim() && fromEmail.trim()) setSmtpUser(fromEmail.trim());
   };
 
   const test = async () => {
@@ -220,6 +253,59 @@ function EmailCard({ settings, onSaved }: { settings: AdminSettings; onSaved: ()
               <option value="sendgrid">SendGrid</option>
             </Select>
           </Field>
+          {provider === 'default' && (
+            <>
+              <p className="muted small">{t('account.settings.smtpHint')}</p>
+              <Field label={t('account.settings.fromName')}>
+                <Input value={fromName} onChange={(e) => setFromName(e.target.value)} maxLength={100} />
+              </Field>
+              <Field label={t('account.settings.fromEmail')} hint={t('account.settings.smtpFromHint')}>
+                <Input type="email" value={fromEmail} onChange={(e) => setFromEmail(e.target.value)} required={Boolean(smtpHost.trim())} />
+              </Field>
+              <Field label={t('account.settings.smtpPreset')}>
+                <Select value="" onChange={(e) => applyPreset(e.target.value)}>
+                  <option value="">{t('account.settings.smtpPresetChoose')}</option>
+                  {Object.entries(SMTP_PRESETS).map(([key, p]) => <option key={key} value={key}>{p.label}</option>)}
+                </Select>
+              </Field>
+              <div className="form-grid">
+                <Field label={t('account.settings.smtpHost')}>
+                  <Input value={smtpHost} onChange={(e) => setSmtpHost(e.target.value)} placeholder="smtp.gmail.com" spellCheck={false} />
+                </Field>
+                <Field label={t('account.settings.smtpPort')}>
+                  <Input type="number" min={1} max={65535} value={smtpPort} onChange={(e) => setSmtpPort(e.target.value)} />
+                </Field>
+              </div>
+              <Field label={t('account.settings.smtpSecurity')} hint={t('account.settings.smtpPortHint')}>
+                <Select value={smtpSecurity} onChange={(e) => {
+                  const v = e.target.value as 'ssl' | 'starttls' | 'none';
+                  setSmtpSecurity(v);
+                  if (v === 'ssl' && smtpPort === '587') setSmtpPort('465');
+                  if (v === 'starttls' && smtpPort === '465') setSmtpPort('587');
+                }}>
+                  <option value="ssl">{t('account.settings.smtpSsl')}</option>
+                  <option value="starttls">{t('account.settings.smtpStarttls')}</option>
+                  <option value="none">{t('account.settings.smtpNone')}</option>
+                </Select>
+              </Field>
+              <Field label={t('account.settings.smtpUser')}>
+                <Input value={smtpUser} onChange={(e) => setSmtpUser(e.target.value)} autoComplete="off" spellCheck={false} />
+              </Field>
+              <Field
+                label={t('account.settings.smtpPassword')}
+                hint={settings.smtp_password_set ? t('account.settings.smtpPasswordSaved') : t('account.settings.smtpPasswordHint')}
+              >
+                <Input
+                  type="password"
+                  value={smtpPassword}
+                  onChange={(e) => setSmtpPassword(e.target.value)}
+                  placeholder={settings.smtp_password_set ? '••••••••' : ''}
+                  autoComplete="new-password"
+                  required={Boolean(smtpUser.trim()) && !settings.smtp_password_set}
+                />
+              </Field>
+            </>
+          )}
           {provider === 'sendgrid' && (
             <>
               {!settings.sendgrid_key_set && <Alert tone="warning">{t('account.settings.sendgridKeyMissing')}</Alert>}
