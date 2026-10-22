@@ -11,7 +11,7 @@ import { useAuth } from '../../../auth/useAuth.ts';
 import { get } from '../../../api/client.ts';
 import { useAsync } from '../../../lib/useAsync.ts';
 import { formatDate } from '../../../lib/format.ts';
-import { DocTypeBadge } from '../shared.tsx';
+import { AiProviderBadge, DocTypeBadge } from '../shared.tsx';
 import { documentName } from '../labels.ts';
 import { openSignedUrl } from '../open-signed-url.ts';
 import type { ClauseGroup, LeaseDetail, LeaseDocument } from '../types.ts';
@@ -230,6 +230,7 @@ export default function DocumentsTab({ detail, docId, attId, page, onSelect, onS
                 <span className="lw-docs-item-title">{documentName(t, d)}</span>
                 <span className="lw-docs-item-meta">
                   <DocTypeBadge type={d.doc_type} />
+                  <AiProviderBadge provider={d.ai_provider} model={d.ai_model} showModel={false} />
                   <span>{d.effective_date ? formatDate(d.effective_date) : t('leases.overview.undated')}</span>
                   {d.page_count ? <span>· {t('leases.files.pages', { count: d.page_count })}</span> : null}
                 </span>

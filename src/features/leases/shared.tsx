@@ -4,7 +4,7 @@ import { Badge } from '../../components/ui.tsx';
 import { useT } from '../../i18n/index.tsx';
 import { formatDate } from '../../lib/format.ts';
 import type { DocType } from '../../api/types.ts';
-import type { FileStatus, LeaseAlert, SignatureRecord } from './types.ts';
+import type { AiProvider, FileStatus, LeaseAlert, SignatureRecord } from './types.ts';
 import { alertText, docTypeLabel } from './labels.ts';
 export function DocTypeBadge({ type }: { type: DocType | string }) {
   const t = useT();
@@ -19,6 +19,18 @@ export function FileStatusBadge({ status }: { status: FileStatus }) {
     <Badge tone={tone}>
       {(status === 'processing' || status === 'queued') && <span className="spinner spinner-inline lw-badge-spin" aria-hidden="true" />}
       {t(`leases.fileStatus.${status}`)}
+    </Badge>
+  );
+}
+
+/** Which AI provider (and model) abstracted a lease or document. */
+export function AiProviderBadge({ provider, model, showModel = true }: { provider: AiProvider | null | undefined; model?: string | null; showModel?: boolean }) {
+  const t = useT();
+  if (!provider) return null;
+  const name = t(`leases.ai.${provider}`);
+  return (
+    <Badge tone={provider === 'openai' ? 'success' : 'neutral'} title={t('leases.ai.hint', { provider: name, model: model ?? t('leases.ai.unknownModel') })}>
+      {name}{showModel && model ? ` · ${model}` : ''}
     </Badge>
   );
 }

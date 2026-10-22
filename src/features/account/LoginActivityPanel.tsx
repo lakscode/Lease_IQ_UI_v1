@@ -36,7 +36,7 @@ interface LoginReport {
 type View = 'events' | 'users' | 'orgs';
 
 /** "Chrome on Windows" from a user agent (enough to recognise a device; not exhaustive). */
-export function deviceOf(ua: string | null): string {
+function deviceOf(ua: string | null): string {
   if (!ua) return '—';
   const browser = /Edg\//.test(ua) ? 'Edge' : /OPR\/|Opera/.test(ua) ? 'Opera' : /Firefox\//.test(ua) ? 'Firefox'
     : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : /node|undici|curl|python|axios/i.test(ua) ? 'Script' : 'Browser';

@@ -23,9 +23,19 @@ import { RecordTab, SignaturesTab } from './workspace/RecordTabs.tsx';
 import ActivityTab from './workspace/ActivityTab.tsx';
 import ReviewTab from './workspace/ReviewTab.tsx';
 import UploadZone from './UploadZone.tsx';
-import { AlertList } from './shared.tsx';
+import { AiProviderBadge, AlertList } from './shared.tsx';
 import { errorText } from './labels.ts';
-import type { LeaseDetail } from './types.ts';
+import type { AiProvider, LeaseDetail } from './types.ts';
+
+/** Distinct AI provider/model pairs that abstracted the lease's documents (else the lease's own record). */
+function aiUsed(detail: LeaseDetail): { provider: AiProvider; model: string | null }[] {
+  const seen = new Map<string, { provider: AiProvider; model: string | null }>();
+  for (const d of detail.documents) {
+    if (d.ai_provider) seen.set(`${d.ai_provider}|${d.ai_model ?? ''}`, { provider: d.ai_provider, model: d.ai_model ?? null });
+  }
+  if (!seen.size && detail.lease.ai_provider) return [{ provider: detail.lease.ai_provider, model: detail.lease.ai_model ?? null }];
+  return [...seen.values()];
+}
 import { useAuth } from '../../auth/useAuth.ts';
 import './leases.css';
 
@@ -125,7 +135,12 @@ export default function LeaseDetailsPage() {
     <div className="page lw-workspace">
       <PageHeader
         back={<Link to={`/leases/${lease.id}`}>← {t('leases.details.backOverview')}</Link>}
-        title={<span className="row">{lease.tenant_name || t('leases.unnamed')} <LeaseStatusBadge status={lease.status} /></span>}
+        title={
+          <span className="row">
+            {lease.tenant_name || t('leases.unnamed')} <LeaseStatusBadge status={lease.status} />
+            {aiUsed(data).map((a) => <AiProviderBadge key={`${a.provider}|${a.model}`} provider={a.provider} model={a.model} />)}
+          </span>
+        }
         subtitle={[lease.premises_address, lease.expiration_date && t('leases.details.expires', { date: formatDate(lease.expiration_date) })].filter(Boolean).join(' · ')}
         actions={
           <>

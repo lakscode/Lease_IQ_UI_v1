@@ -62,6 +62,8 @@ export interface FilesResponse {
   ai_configured: boolean;
 }
 
+export type AiProvider = 'claude' | 'openai';
+
 export interface LeaseListItem {
   id: string;
   tenant_name: string | null;
@@ -76,6 +78,9 @@ export interface LeaseListItem {
   risk_score: number | null;
   document_count: number;
   main_document_id: string | null;
+  /** AI that abstracted the lease's most recent document (null: not abstracted by AI; absent from older APIs). */
+  ai_provider?: AiProvider | null;
+  ai_model?: string | null;
   updated_at: string;
   /** First lease this one is listed under (same "Add amendment" upload or split PDF); absent from older APIs. */
   parent_lease_id?: string | null;
@@ -112,6 +117,9 @@ export interface LeaseDocument {
   changes_made: string | null;
   summary: string | null;
   signature: SignatureRecord | null;
+  /** AI provider and model that abstracted this document (null: before this was recorded, or not by AI). */
+  ai_provider?: AiProvider | null;
+  ai_model?: string | null;
   sha256: string | null;
   has_pdf: boolean;
   is_scanned: boolean | null;
@@ -134,7 +142,7 @@ export interface LeaseDetail {
 }
 
 /** 'user': marked by a user on the PDF (not a classifier; kept when the document is re-classified). */
-export type ClauseSource = 'claude' | 'svm' | 'gateway' | 'langchain' | 'llama' | 'user';
+export type ClauseSource = 'claude' | 'svm' | 'gateway' | 'langchain' | 'llama' | 'openai' | 'user';
 
 export interface ClauseItem {
   id: string;

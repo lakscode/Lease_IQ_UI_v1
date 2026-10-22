@@ -42,11 +42,12 @@ export function PredictionCatalogPanel() {
       <Card title={t('account.catalog.orgsTitle')} padded={false}>
         <div className="table-wrap">
           <table className="table">
-            <thead><tr><th>{t('account.org.name')}</th><th>{t('account.orgs.classifierLabel')}</th><th>{t('account.catalog.taxonomy')}</th></tr></thead>
+            <thead><tr><th>{t('account.org.name')}</th><th>{t('account.orgs.aiLabel')}</th><th>{t('account.orgs.classifierLabel')}</th><th>{t('account.catalog.taxonomy')}</th></tr></thead>
             <tbody>
               {data.orgs.map((o) => (
                 <tr key={o.id}>
                   <td className="cell-title">{o.name}</td>
+                  <td>{t(`account.orgs.ai.${o.ai_provider ?? 'claude'}`)}{o.ai_model ? <span className="muted small"> · {o.ai_model}</span> : null}</td>
                   <td>{t(`account.orgs.classifier.${o.classifier}`)}{o.model ? <span className="muted small"> · {o.model}</span> : null}</td>
                   <td className="small">{t(LEASE_TAXONOMY.includes(o.classifier) ? 'account.catalog.leaseTitle' : 'account.catalog.standardTitle')}</td>
                 </tr>

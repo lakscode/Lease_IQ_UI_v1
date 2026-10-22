@@ -1,4 +1,5 @@
-// Super admin organization management: create, rename, choose the clause classifier, delete (only when empty), manage members.
+// Super admin organization management: create, rename, choose the AI provider (Claude or OpenAI) and model, choose the
+// clause classifier, delete (only when empty), manage members.
 import { useState } from 'react';
 import { del, get, patch, post } from '../../api/client.ts';
 import { useAuth } from '../../auth/useAuth.ts';
@@ -8,7 +9,7 @@ import { useT } from '../../i18n/index.tsx';
 import { formatDate } from '../../lib/format.ts';
 import { useAsync } from '../../lib/useAsync.ts';
 import { MembersPanel } from './MembersPanel.tsx';
-import { CURRENCIES, type AdminOrg, type ClauseClassifier, type ClauseClassifierInfo } from './types.ts';
+import { CURRENCIES, type AdminOrg, type AiProvider, type AiProviderInfo, type ClauseClassifier, type ClauseClassifierInfo } from './types.ts';
 import './account.css';
 
 const hasData = (o: AdminOrg) => o.lease_count + o.file_count + o.document_count > 0;
@@ -19,6 +20,18 @@ const isLlama = (m: string) => /^meta\/llama/i.test(m);
 /** Configured but refusing requests (e.g. no credits): calls fall back to the SVM. */
 const gatewayBlocked = (info: ClauseClassifierInfo | null | undefined, c: ClauseClassifier) =>
   Boolean(info && usesModel(c) && info.gateway_status.configured && !info.gateway_status.ready);
+
+const AI_PROVIDERS: AiProvider[] = ['claude', 'openai'];
+
+function AiBadge({ org }: { org: AdminOrg }) {
+  const t = useT();
+  const provider = org.ai_provider ?? 'claude';
+  return (
+    <Badge tone={provider === 'openai' ? 'success' : 'neutral'} title={org.ai_model ?? t('account.orgs.aiModelDefault')}>
+      {t(`account.orgs.ai.${provider}`)}{org.ai_model ? ` · ${org.ai_model}` : ''}
+    </Badge>
+  );
+}
 
 function ClassifierBadge({ org }: { org: AdminOrg }) {
   const t = useT();
@@ -76,6 +89,7 @@ export function AdminOrgsPanel() {
                 <th>{t('account.org.currency')}</th>
                 <th className="num">{t('account.org.members')}</th>
                 <th className="num">{t('account.orgs.leases')}</th>
+                <th>{t('account.orgs.aiLabel')}</th>
                 <th>{t('account.orgs.classifierLabel')}</th>
                 <th>{t('account.settings.tabDomains')}</th>
                 <th>{t('account.org.created')}</th>
@@ -89,6 +103,7 @@ export function AdminOrgsPanel() {
                   <td>{o.currency}</td>
                   <td className="num">{o.member_count}</td>
                   <td className="num">{o.lease_count}</td>
+                  <td><AiBadge org={o} /></td>
                   <td><ClassifierBadge org={o} /></td>
                   <td>{o.domains.length ? <div className="acct-chips">{o.domains.map((d) => <Badge key={d}>{d}</Badge>)}</div> : <span className="muted">—</span>}</td>
                   <td className="acct-muted-cell">{formatDate(o.created_at)}</td>
@@ -123,7 +138,10 @@ function OrgModal({ org, onClose, onDone }: { org: AdminOrg | null; onClose: () 
   const [addMe, setAddMe] = useState(true);
   const [classifier, setClassifier] = useState<ClauseClassifier>(org?.clause_classifier ?? 'svm');
   const [model, setModel] = useState(org?.clause_model ?? '');
+  const [provider, setProvider] = useState<AiProvider>(org?.ai_provider ?? 'claude');
+  const [aiModel, setAiModel] = useState(org?.ai_model ?? '');
   const info = useAsync((signal) => get<ClauseClassifierInfo>('/admin/clause-classifiers', undefined, signal));
+  const aiInfo = useAsync((signal) => get<AiProviderInfo>('/admin/ai-providers', undefined, signal));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -133,8 +151,9 @@ function OrgModal({ org, onClose, onDone }: { org: AdminOrg | null; onClose: () 
     setError(null);
     try {
       const clause = { clause_classifier: classifier, clause_model: usesModel(classifier) ? model.trim() || null : null };
-      if (org) await patch(`/admin/orgs/${org.id}`, { name: name.trim(), currency, ...clause });
-      else await post('/admin/orgs', { name: name.trim(), currency, add_me: addMe, ...clause });
+      const ai = { ai_provider: provider, ai_model: aiModel || null };
+      if (org) await patch(`/admin/orgs/${org.id}`, { name: name.trim(), currency, ...ai, ...clause });
+      else await post('/admin/orgs', { name: name.trim(), currency, add_me: addMe, ...ai, ...clause });
       toast(org ? t('account.orgs.saved') : t('account.orgs.created', { name: name.trim() }));
       onDone();
       onClose();
@@ -159,7 +178,12 @@ function OrgModal({ org, onClose, onDone }: { org: AdminOrg | null; onClose: () 
             {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
           </Select>
         </Field>
-        <ClassifierFields info={info.data} classifier={classifier} model={model} onClassifier={setClassifier} onModel={setModel} />
+        <AiFields info={aiInfo.data} error={aiInfo.error} provider={provider} model={aiModel} onProvider={(p) => { setProvider(p); setAiModel(''); }} onModel={setAiModel} />
+        <ClassifierFields
+          info={info.data} classifier={classifier} model={model} onClassifier={setClassifier} onModel={setModel}
+          aiName={`${t(`account.orgs.ai.${provider}`)} · ${aiModel || aiInfo.data?.[provider].default_model || ''}`}
+          aiConfigured={aiInfo.data ? aiInfo.data[provider].configured : true}
+        />
         {!org && (
           <label className="checkbox"><input type="checkbox" className="acct-check" checked={addMe} onChange={(e) => setAddMe(e.target.checked)} />{t('account.orgs.addMe')}</label>
         )}
@@ -169,17 +193,60 @@ function OrgModal({ org, onClose, onDone }: { org: AdminOrg | null; onClose: () 
   );
 }
 
-function ClassifierFields({ info, classifier, model, onClassifier, onModel }: {
+/** AI provider (Claude or OpenAI) and model used to process the organization's files; empty model = provider default. */
+function AiFields({ info, error, provider, model, onProvider, onModel }: {
+  info: AiProviderInfo | null | undefined;
+  /** Loading the model lists failed (e.g. the API is older than this UI). */
+  error?: string | null;
+  provider: AiProvider;
+  model: string;
+  onProvider: (p: AiProvider) => void;
+  onModel: (m: string) => void;
+}) {
+  const t = useT();
+  const current = info?.[provider];
+  const models = current?.models ?? [];
+  const note = models.find((m) => m.id === (model || current?.default_model))?.note;
+  return (
+    <>
+      <Field label={t('account.orgs.aiLabel')} hint={t(`account.orgs.aiHint.${provider}`)}>
+        <Select value={provider} onChange={(e) => onProvider(e.target.value as AiProvider)}>
+          {AI_PROVIDERS.map((p) => (
+            <option key={p} value={p}>
+              {t(`account.orgs.ai.${p}`)}{info && !info[p].configured ? ` (${t('account.orgs.classifierNotConfigured')})` : ''}
+            </option>
+          ))}
+        </Select>
+      </Field>
+      <Field label={t('account.orgs.aiModel')} hint={note}>
+        <Select value={model} onChange={(e) => onModel(e.target.value)} disabled={!info}>
+          <option value="">{t('account.orgs.aiModelDefaultNamed', { model: current?.default_model ?? '' })}</option>
+          {model && !models.some((m) => m.id === model) && <option value={model}>{model}</option>}
+          {models.map((m) => <option key={m.id} value={m.id}>{m.label}{m.label !== m.id ? ` (${m.id})` : ''}</option>)}
+        </Select>
+      </Field>
+      {error && <Alert tone="warning">{t('account.orgs.aiModelsFailed', { error })}</Alert>}
+      {info && !info[provider].configured && <Alert tone="warning">{t(`account.orgs.aiMissingKey.${provider}`)}</Alert>}
+    </>
+  );
+}
+
+function ClassifierFields({ info, classifier, model, onClassifier, onModel, aiName, aiConfigured }: {
   info: ClauseClassifierInfo | null | undefined;
+  /** The organization's AI provider and model: classifier 'claude' classifies clauses with it. */
+  aiName: string;
+  aiConfigured: boolean;
   classifier: ClauseClassifier;
   model: string;
   onClassifier: (c: ClauseClassifier) => void;
   onModel: (m: string) => void;
 }) {
   const t = useT();
-  const configured = info ? info[classifier].configured : true;
+  // 'claude' = the organization's AI provider; its missing key is reported by AiFields.
+  const isConfigured = (c: ClauseClassifier) => (c === 'claude' ? aiConfigured : info ? info[c].configured : true);
+  const configured = classifier === 'claude' || isConfigured(classifier);
   const hint = classifier === 'claude'
-    ? t('account.orgs.classifierHint.claude', { model: info?.claude.model ?? '' })
+    ? t('account.orgs.classifierHint.claude', { model: aiName })
     : classifier === 'svm'
       ? t('account.orgs.classifierHint.svm', { types: info?.svm.clause_types ?? '', date: info ? formatDate(info.svm.trained_at) : '' })
       : t(`account.orgs.classifierHint.${classifier}`);
@@ -197,7 +264,7 @@ function ClassifierFields({ info, classifier, model, onClassifier, onModel }: {
           {CLASSIFIERS.map((c) => (
             <option key={c} value={c}>
               {t(`account.orgs.classifier.${c}`)}
-              {info && !info[c].configured ? ` (${t('account.orgs.classifierNotConfigured')})` : gatewayBlocked(info, c) ? ` (${t('account.orgs.gatewayNoCredits')})` : ''}
+              {info && !isConfigured(c) ? ` (${t('account.orgs.classifierNotConfigured')})` : gatewayBlocked(info, c) ? ` (${t('account.orgs.gatewayNoCredits')})` : ''}
             </option>
           ))}
         </Select>

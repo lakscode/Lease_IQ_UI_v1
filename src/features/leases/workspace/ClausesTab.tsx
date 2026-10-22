@@ -1,4 +1,4 @@
-// Clauses of the lease family grouped by type, with source (Claude AI / SVM / Vercel AI / LangChain / Llama), confidence,
+// Clauses of the lease family grouped by type, with source (Claude AI / OpenAI / SVM / Vercel AI / LangChain / Llama), confidence,
 // alternatives and location. Editors can change a clause's type, mark it verified, or remove it (history: Activity tab).
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
@@ -17,9 +17,9 @@ function ConfidenceBadge({ value }: { value: number | null }) {
   return <Badge tone={tone}>{formatPercent(value)}</Badge>;
 }
 
-const SOURCES: ClauseSource[] = ['claude', 'svm', 'gateway', 'langchain', 'llama', 'user'];
-const SOURCE_TONE = { claude: 'neutral', svm: 'info', gateway: 'primary', langchain: 'warning', llama: 'success', user: 'primary' } as const;
-const SHOWS_MODEL = new Set<ClauseSource>(['gateway', 'langchain', 'llama']);
+const SOURCES: ClauseSource[] = ['claude', 'openai', 'svm', 'gateway', 'langchain', 'llama', 'user'];
+const SOURCE_TONE = { claude: 'neutral', openai: 'neutral', svm: 'info', gateway: 'primary', langchain: 'warning', llama: 'success', user: 'primary' } as const;
+const SHOWS_MODEL = new Set<ClauseSource>(['openai', 'gateway', 'langchain', 'llama']);
 
 function SourceBadge({ source, model }: { source: ClauseSource; model: string | null }) {
   const t = useT();
@@ -124,7 +124,7 @@ export default function ClausesTab({ leaseId, onChanged }: { leaseId: string; on
       .filter((g) => g.clauses.length > 0);
   }, [data, filter, source]);
   const sourceCounts = useMemo(() => {
-    const counts: Record<ClauseSource, number> = { claude: 0, svm: 0, gateway: 0, langchain: 0, llama: 0, user: 0 };
+    const counts: Record<ClauseSource, number> = { claude: 0, openai: 0, svm: 0, gateway: 0, langchain: 0, llama: 0, user: 0 };
     for (const g of data ?? []) for (const c of g.clauses) counts[c.source ?? 'claude']++;
     return counts;
   }, [data]);

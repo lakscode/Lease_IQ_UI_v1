@@ -143,6 +143,20 @@ export interface AdminOrg {
   /** Clause classifier chosen by super admins: Claude AI, local SVM, or a Vercel AI Gateway model (clause_model). */
   clause_classifier: ClauseClassifier;
   clause_model: string | null;
+  /** AI provider for document processing; ai_model null = the provider's default. */
+  ai_provider: AiProvider;
+  ai_model: string | null;
+}
+
+export type AiProvider = 'claude' | 'openai';
+
+export interface AiModelOption { id: string; label: string; note: string }
+
+/** GET /admin/ai-providers: providers an organization can use, with their models. */
+export interface AiProviderInfo {
+  providers: AiProvider[];
+  claude: { configured: boolean; default_model: string; models: AiModelOption[] };
+  openai: { configured: boolean; default_model: string; models: AiModelOption[] };
 }
 
 export type ClauseClassifier = 'claude' | 'svm' | 'gateway' | 'langchain' | 'llama';
@@ -155,7 +169,7 @@ export interface PredictionCatalog {
   /** CLAUSE_TYPES (Claude, Vercel AI Gateway). */
   standard_clauses: string[];
   svm: { trained_at: string; clause_types: number; accuracy: number | null; macro_f1: number | null; cv_examples: number | null };
-  orgs: { id: string; name: string; classifier: ClauseClassifier; model: string | null }[];
+  orgs: { id: string; name: string; classifier: ClauseClassifier; model: string | null; ai_provider: AiProvider; ai_model: string | null }[];
 }
 
 export interface ClauseClassifierInfo {
