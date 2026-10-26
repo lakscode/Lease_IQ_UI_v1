@@ -69,3 +69,10 @@
 /* Login activity */
 .acct-linkbtn { background: none; border: none; padding: 0; color: var(--primary); cursor: pointer; font: inherit; text-align: left; }
 .acct-linkbtn:hover { text-decoration: underline; }
+
+/* Logs → API logs */
+.acct-api-req { white-space: nowrap; }
+.acct-api-req code { white-space: normal; word-break: break-all; }
+.acct-api-method { display: inline-block; min-width: 52px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; color: var(--muted); }
+.acct-api-slowcell { color: var(--warning); font-weight: 600; }
+.acct-api-slow { align-self: center; }

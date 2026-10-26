@@ -210,6 +210,12 @@ textarea.input { resize: vertical; }
 .nav-link:hover { background: var(--surface-2); color: var(--text); }
 .nav-link.active { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
 .nav-icon { width: 18px; text-align: center; opacity: 0.85; }
+.nav-group { display: flex; flex-direction: column; gap: 2px; }
+.nav-group + .nav-group { margin-top: 12px; }
+.nav-group-items { display: flex; flex-direction: column; gap: 2px; }
+.nav-group-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; padding: 6px 12px; border: 0; border-radius: 6px; background: none; color: var(--muted); font: inherit; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; text-align: left; cursor: pointer; }
+.nav-group-title:hover { color: var(--text); background: var(--surface-2); }
+.nav-group-caret { font-size: 0.75rem; }
 .nav-divider { height: 1px; background: var(--border); margin: 10px 6px; }
 .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .topbar { height: 58px; display: flex; align-items: center; gap: 10px; padding: 0 20px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 20; }

@@ -221,3 +221,17 @@ export interface ErrorLogEntry {
   path: string | null;
   user_agent: string | null;
 }
+
+/** GET /api/logs/api (lib/api-request-log.ts). Summary counts ignore the outcome filter. */
+export interface ApiRequestLog {
+  summary: {
+    total: number; success: number; client_errors: number; server_errors: number;
+    /** timing of the rows returned, not of every matching request */
+    avg_ms: number | null; p95_ms: number | null; sample: number;
+  };
+  rows: {
+    id: number; created_at: string; method: string; path: string; query: string | null; status: number; duration_ms: number;
+    user_id: string | null; email: string | null; org_id: string | null; org_name: string | null;
+    error_code: string | null; error_message: string | null; ip: string | null; user_agent: string | null; runtime: string | null;
+  }[];
+}

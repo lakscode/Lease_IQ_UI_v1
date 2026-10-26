@@ -7,14 +7,43 @@ import { HelpButton } from '../features/account/HelpButton.tsx';
 import { cx } from './ui-utils.ts';
 import { BrandLogo } from './BrandLogo.tsx';
 
-const NAV = [
-  { to: '/dashboard', key: 'nav.dashboard', icon: '▦' },
-  { to: '/portfolio', key: 'nav.portfolio', icon: '◔' },
-  { to: '/leases', key: 'nav.leases', icon: '▤' },
-  { to: '/assistant', key: 'nav.assistant', icon: '✦' },
-  { to: '/reports', key: 'nav.reports', icon: '☰' },
-  { to: '/import', key: 'nav.import', icon: '⇪' },
+interface NavItem { to: string; key: string; icon: string; end?: boolean }
+
+const NAV_GROUPS: { id: string; key: string; items: NavItem[] }[] = [
+  {
+    id: 'lease', key: 'nav.group.leaseAbstraction',
+    items: [
+      { to: '/dashboard', key: 'nav.dashboard', icon: '▦' },
+      { to: '/portfolio', key: 'nav.portfolio', icon: '◔' },
+      { to: '/leases', key: 'nav.leases', icon: '▤' },
+      { to: '/assistant', key: 'nav.assistant', icon: '✦' },
+      { to: '/reports', key: 'nav.reports', icon: '☰' },
+      { to: '/import', key: 'nav.import', icon: '⇪' },
+    ],
+  },
+  {
+    id: 'fund', key: 'nav.group.fundAdmin',
+    items: [
+      { to: '/fund', key: 'nav.fund.overview', icon: '◈', end: true },
+      { to: '/fund/funds', key: 'nav.fund.funds', icon: '▣' },
+      { to: '/fund/properties', key: 'nav.fund.properties', icon: '⌂' },
+      { to: '/fund/investors', key: 'nav.fund.investors', icon: '♟' },
+      { to: '/fund/capital-calls', key: 'nav.fund.capitalCalls', icon: '⇣' },
+      { to: '/fund/distributions', key: 'nav.fund.distributions', icon: '⇡' },
+      { to: '/fund/nav', key: 'nav.fund.nav', icon: '≋' },
+    ],
+  },
 ];
+
+const COLLAPSED_KEY = 'leaseiq.nav.collapsed';
+
+function readCollapsed(): Record<string, boolean> {
+  try {
+    return JSON.parse(localStorage.getItem(COLLAPSED_KEY) || '{}') as Record<string, boolean>;
+  } catch {
+    return {};
+  }
+}
 
 export default function AppLayout() {
   const { me, orgs, activeOrg, isOrgAdmin, isSuperAdmin, switchOrg, signOut, role } = useAuth();
@@ -22,6 +51,15 @@ export default function AppLayout() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(readCollapsed);
+
+  const toggleGroup = (id: string) => {
+    setCollapsed((prev) => {
+      const next = { ...prev, [id]: !prev[id] };
+      try { localStorage.setItem(COLLAPSED_KEY, JSON.stringify(next)); } catch { /* private mode: this session only */ }
+      return next;
+    });
+  };
 
   const name = me?.profile.display_name || me?.user.email || '';
 
@@ -43,12 +81,31 @@ export default function AppLayout() {
           <BrandLogo />
           {activeOrg?.logo_url && <img src={activeOrg.logo_url} alt="" className="brand-logo brand-org-logo" />}
         </div>
-        <nav className="nav" onClick={() => setNavOpen(false)}>
-          {NAV.map((item) => (
-            <NavLink key={item.to} to={item.to} className="nav-link">
-              <span className="nav-icon" aria-hidden="true">{item.icon}</span>
-              {t(item.key)}
-            </NavLink>
+        {/* Following a link closes the mobile menu; toggling a group doesn't. */}
+        <nav className="nav" onClick={(e) => { if ((e.target as HTMLElement).closest('a')) setNavOpen(false); }}>
+          {NAV_GROUPS.map((group) => (
+            <div key={group.id} className="nav-group">
+              <button
+                type="button"
+                className="nav-group-title"
+                aria-expanded={!collapsed[group.id]}
+                aria-controls={`nav-group-${group.id}`}
+                onClick={() => toggleGroup(group.id)}
+              >
+                <span>{t(group.key)}</span>
+                <span className="nav-group-caret" aria-hidden="true">{collapsed[group.id] ? '▸' : '▾'}</span>
+              </button>
+              {!collapsed[group.id] && (
+                <div id={`nav-group-${group.id}`} className="nav-group-items">
+                  {group.items.map((item) => (
+                    <NavLink key={item.to} to={item.to} end={item.end} className="nav-link">
+                      <span className="nav-icon" aria-hidden="true">{item.icon}</span>
+                      {t(item.key)}
+                    </NavLink>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
           {(isOrgAdmin || isSuperAdmin) && <div className="nav-divider" />}
           {isOrgAdmin && (

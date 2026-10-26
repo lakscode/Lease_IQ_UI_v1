@@ -25,6 +25,15 @@ import DashboardPage from './features/analytics/DashboardPage.tsx';
 import PortfolioPage from './features/analytics/PortfolioPage.tsx';
 import ReportsPage from './features/analytics/ReportsPage.tsx';
 import ImportPage from './features/analytics/ImportPage.tsx';
+// Fund administration
+import FundOverviewPage from './features/fund/FundOverviewPage.tsx';
+import FundsPage from './features/fund/FundsPage.tsx';
+import FundDetailPage from './features/fund/FundDetailPage.tsx';
+import InvestorsPage from './features/fund/InvestorsPage.tsx';
+import CapitalCallsPage from './features/fund/CapitalCallsPage.tsx';
+import DistributionsPage from './features/fund/DistributionsPage.tsx';
+import ValuationsPage from './features/fund/ValuationsPage.tsx';
+import PropertyMappingPage from './features/fund/PropertyMappingPage.tsx';
 
 function NotFound() {
   const t = useT();
@@ -55,6 +64,14 @@ export default function App() {
         <Route path="/assistant/:conversationId" element={<AssistantPage />} />
         <Route path="/reports" element={<ReportsPage />} />
         <Route path="/import" element={<ImportPage />} />
+        <Route path="/fund" element={<FundOverviewPage />} />
+        <Route path="/fund/funds" element={<FundsPage />} />
+        <Route path="/fund/funds/:fundId" element={<FundDetailPage />} />
+        <Route path="/fund/properties" element={<PropertyMappingPage />} />
+        <Route path="/fund/investors" element={<InvestorsPage />} />
+        <Route path="/fund/capital-calls" element={<CapitalCallsPage />} />
+        <Route path="/fund/distributions" element={<DistributionsPage />} />
+        <Route path="/fund/nav" element={<ValuationsPage />} />
         <Route path="/organization" element={<RequireRole><OrganizationPage /></RequireRole>} />
         <Route path="/settings" element={<RequireRole superAdmin><SettingsPage /></RequireRole>} />
         <Route path="/logs" element={<RequireRole superAdmin><LogsPage /></RequireRole>} />

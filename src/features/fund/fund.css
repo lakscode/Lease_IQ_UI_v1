@@ -1,0 +1,24 @@
+/* Fund administration (prefix .fa-). */
+.fa-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; border-bottom: 1px solid var(--border); }
+.fa-toolbar > .input { flex: 1 1 240px; max-width: 360px; }
+.fa-filter { display: inline-flex; min-width: 180px; }
+.fa-filter .input { width: 100%; }
+.fa-strong { font-weight: 600; color: var(--text); }
+a.fa-strong { color: var(--primary); text-decoration: none; }
+a.fa-strong:hover { text-decoration: underline; }
+.fa-sub { font-size: 0.8rem; color: var(--muted); }
+.fa-warn { color: var(--warning); }
+.fa-pad { padding: 14px 18px; margin: 0; }
+.fa-footnote { font-size: 0.8rem; border-top: 1px solid var(--border); }
+.fa-notes { margin: 12px 0 0; white-space: pre-wrap; color: var(--muted); font-size: 0.9rem; }
+.fa-title { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.fa-h3 { margin: 6px 0 0; font-size: 0.95rem; }
+.fa-stack { gap: 20px; }
+.fa-actions { display: inline-flex; gap: 4px; justify-content: flex-end; }
+.fa-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px 20px; margin: 0; }
+.fa-facts dt { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.fa-facts dd { margin: 2px 0 0; font-weight: 600; color: var(--text); }
+.table tfoot .fa-total td { font-weight: 700; background: var(--surface-2); border-top: 1px solid var(--border-strong); }
+.fa-bulkbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; background: var(--primary-soft); border-bottom: 1px solid var(--border); }
+.fa-col-check { width: 36px; }
+.fa-fund-select { min-width: 170px; }
