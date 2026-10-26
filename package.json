@@ -4,8 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "sync:svm": "node scripts/sync-svm.mjs",
+    "predev": "npm run sync:svm",
     "dev": "vite",
+    "prebuild": "npm run sync:svm",
     "build": "tsc -b && vite build",
+    "pretypecheck": "npm run sync:svm",
     "typecheck": "tsc -b",
     "preview": "vite preview"
   },

@@ -8,8 +8,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
-    // fs.allow: the Settings → Train model worker imports the API's trainer (API/supabase/functions/api/lib/clause-svm-*.ts).
-    server: { port: 8080, strictPort: true, proxy, fs: { allow: ['.', '../API/supabase/functions/api/lib'] } },
+    server: { port: 8080, strictPort: true, proxy },
     preview: { port: 8080, strictPort: true, proxy },
   };
 });

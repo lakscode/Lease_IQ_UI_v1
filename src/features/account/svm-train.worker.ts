@@ -1,7 +1,8 @@
 // Web Worker: retrains the clause SVM in the super admin's browser (Settings → Train model). It runs the API's own
-// trainer (API lib/clause-svm-train.ts, shared with `npm run svm:train`), so the model is built exactly as the bundled
-// one, plus users' clauses. The deployed API can't train: Edge Functions limit CPU time per request.
-import { prepareExamples, trainModel, type Example } from '../../../../API/supabase/functions/api/lib/clause-svm-train.ts';
+// trainer (API lib/clause-svm-train.ts, shared with `npm run svm:train`, copied into ./svm by scripts/sync-svm.mjs),
+// so the model is built exactly as the bundled one, plus users' clauses. The deployed API can't train: Edge Functions
+// limit CPU time per request.
+import { prepareExamples, trainModel, type Example } from './svm/clause-svm-train.ts';
 
 export interface TrainRequest {
   clauses: Record<string, string>;
